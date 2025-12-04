@@ -1,0 +1,212 @@
+definitions:
+  models.BalanceResponse:
+    properties:
+      total:
+        type: integer
+      withdrawable:
+        type: integer
+    type: object
+  models.ChargeRequest:
+    properties:
+      amount:
+        type: integer
+      idempotency_key:
+        type: string
+      release_at:
+        type: string
+      user_id:
+        type: integer
+    type: object
+  models.ChargeResponse:
+    properties:
+      idempotency_key:
+        type: string
+      message:
+        type: string
+    type: object
+  models.ErrorResponse:
+    properties:
+      error:
+        type: string
+      status:
+        type: integer
+    type: object
+  models.HealthResponse:
+    properties:
+      message:
+        type: string
+      status:
+        type: string
+    type: object
+  models.Transaction:
+    properties:
+      amount:
+        description: positive for charge, negative for withdraw
+        type: integer
+      created_at:
+        type: string
+      id:
+        type: integer
+      release_at:
+        description: optional for charge
+        type: string
+      status:
+        description: '"pending", "completed", "failed"'
+        type: string
+      type:
+        description: '"charge" or "withdraw"'
+        type: string
+      user_id:
+        type: integer
+    type: object
+  models.WithdrawRequest:
+    properties:
+      amount:
+        type: integer
+      idempotency_key:
+        type: string
+      user_id:
+        type: integer
+    type: object
+  models.WithdrawResponse:
+    properties:
+      idempotency_key:
+        type: string
+      message:
+        type: string
+      status:
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /balance:
+    get:
+      consumes:
+      - application/json
+      description: دریافت موجودی کل و قابل برداشت کاربر
+      parameters:
+      - description: شناسه کاربر
+        in: query
+        name: user_id
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: موجودی حساب
+          schema:
+            $ref: '#/definitions/models.BalanceResponse'
+        "500":
+          description: خطای سرور
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: دریافت موجودی حساب
+      tags:
+      - balance
+  /charge:
+    post:
+      consumes:
+      - application/json
+      description: شارژ حساب کاربری با مبلغ مشخص
+      parameters:
+      - description: درخواست شارژ
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.ChargeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: شارژ موفق
+          schema:
+            $ref: '#/definitions/models.ChargeResponse'
+        "400":
+          description: درخواست نامعتبر
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: خطای سرور
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: شارژ کردن حساب
+      tags:
+      - charge
+  /health:
+    get:
+      consumes:
+      - application/json
+      description: بررسی سلامت سرویس و اتصال به دیتابیس
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: سرویس سالم است
+          schema:
+            $ref: '#/definitions/models.HealthResponse'
+        "500":
+          description: سرویس در وضعیت بد است
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: بررسی وضعیت سرویس
+      tags:
+      - health
+  /transactions:
+    get:
+      consumes:
+      - application/json
+      description: دریافت لیست تمام تراکنش‌های یک کاربر
+      parameters:
+      - description: شناسه کاربر
+        in: query
+        name: user_id
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: لیست تراکنش‌ها
+          schema:
+            items:
+              $ref: '#/definitions/models.Transaction'
+            type: array
+        "500":
+          description: خطای سرور
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: دریافت تاریخچه تراکنش‌ها
+      tags:
+      - transactions
+  /withdraw:
+    post:
+      consumes:
+      - application/json
+      description: درخواست برداشت مبلغ از حساب (درخواست معوق می‌شود)
+      parameters:
+      - description: درخواست برداشت
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.WithdrawRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: درخواست برداشت دریافت شد
+          schema:
+            $ref: '#/definitions/models.WithdrawResponse'
+        "400":
+          description: درخواست نامعتبر
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: خطای سرور
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: درخواست برداشت
+      tags:
+      - withdraw
+swagger: "2.0"

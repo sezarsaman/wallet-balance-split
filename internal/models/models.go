@@ -40,6 +40,32 @@ type TransactionsResponse struct {
 	Limit        int           `json:"limit"`
 }
 
+type ChargeResponse struct {
+	Message        string `json:"message"`
+	IdempotencyKey string `json:"idempotency_key"`
+}
+
+type WithdrawResponse struct {
+	Message        string `json:"message"`
+	IdempotencyKey string `json:"idempotency_key"`
+	Status         string `json:"status"`
+}
+
+type BalanceResponse struct {
+	Total        int64 `json:"total"`
+	Withdrawable int64 `json:"withdrawable"`
+}
+
+type HealthResponse struct {
+	Status  string `json:"status"`
+	Message string `json:"message"`
+}
+
+type ErrorResponse struct {
+	Error  string `json:"error"`
+	Status int    `json:"status"`
+}
+
 // Custom errors
 var (
 	ErrDuplicateRequest      = errors.New("duplicate request - idempotency key already exists")

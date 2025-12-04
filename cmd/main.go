@@ -9,6 +9,7 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+	"wallet-simulator/docs"
 	"wallet-simulator/internal/config"
 	"wallet-simulator/internal/handlers"
 	"wallet-simulator/internal/metrics"
@@ -22,7 +23,14 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
+// Swagger info
+var swaggerInfo = docs.SwaggerInfo
+
 func main() {
+	// Initialize swagger
+	swaggerInfo.Host = "localhost:8080"
+	swaggerInfo.BasePath = "/"
+
 	// ✅ Load configuration from .env
 	cfg := config.Load()
 	log.Println(cfg.String())
@@ -68,11 +76,39 @@ func main() {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
-	r.Use(handlers.MetricsMiddleware(m))
-	handlers.SetupRoutes(r, repo, workerPool)
+	r.Use(middleware.AllowContentType("application/json"))
 
-	// ✅ Expose Metrics Endpoint
-	r.Get("/metrics", promhttp.Handler().ServeHTTP)
+	// ✅ CORS Middleware - اجازه Swagger UI درون container
+	r.Use(func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Access-Control-Allow-Origin", "*")
+			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Idempotency-Key")
+			w.Header().Set("Access-Control-Max-Age", "86400")
+
+			if r.Method == "OPTIONS" {
+				w.WriteHeader(http.StatusOK)
+				return
+			}
+
+			next.ServeHTTP(w, r)
+		})
+	})
+
+	r.Use(handlers.MetricsMiddleware(m))
+
+	// ✅ Expose Metrics and Swagger endpoints FIRST (before API routes)
+	r.Get("/metrics", func(w http.ResponseWriter, r *http.Request) {
+		promhttp.Handler().ServeHTTP(w, r)
+	})
+
+	r.Get("/swagger.json", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		http.ServeFile(w, r, "./docs/swagger.json")
+	})
+
+	// ✅ Setup API routes
+	handlers.SetupRoutes(r, repo, workerPool)
 
 	// ✅ HTTP Server Configuration
 	server := &http.Server{

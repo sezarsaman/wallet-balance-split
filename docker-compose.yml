@@ -50,6 +50,19 @@ services:
     networks:
       - wallet_network
 
+  swagger-ui:
+    image: swaggerapi/swagger-ui:latest
+    container_name: wallet_swagger_ui
+    environment:
+      SWAGGER_JSON: /swagger.json
+    ports:
+      - "8081:8080"
+    volumes:
+      - ./docs/swagger.json:/swagger.json:ro
+      - ./docs/index.html:/usr/share/nginx/html/index.html:ro
+    networks:
+      - wallet_network
+
 volumes:
   postgres_data:
   prometheus_data:

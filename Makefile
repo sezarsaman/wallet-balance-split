@@ -32,6 +32,10 @@ help:
 	@echo "  make run             → Run application (requires DB to be ready)"
 	@echo "  make dev             → Run with auto-reload (requires air)"
 	@echo ""
+	@echo "$(COLOR_GREEN)API Documentation:$(COLOR_RESET)"
+	@echo "  📚 Swagger UI        → http://localhost:8081"
+	@echo "  📚 API Spec JSON     → http://localhost:8080/swagger.json"
+	@echo ""
 	@echo "$(COLOR_GREEN)Monitoring:$(COLOR_RESET)"
 	@echo "  make db-up           → Starts Prometheus (9090) and Grafana (3000)"
 	@echo "  📊 Prometheus        → http://localhost:9090"
@@ -68,6 +72,9 @@ build: bin/wallet
 	@echo "$(COLOR_GREEN)✅ Build completed$(COLOR_RESET)"
 
 bin/wallet:
+	@echo "$(COLOR_YELLOW)🔨 Generating Swagger docs...$(COLOR_RESET)"
+	@which swag > /dev/null || (echo "Installing swag..." && go install github.com/swaggo/swag/cmd/swag@latest)
+	@swag init -g cmd/main.go --parseInternal || true
 	@echo "$(COLOR_YELLOW)🔨 Building application...$(COLOR_RESET)"
 	@mkdir -p bin
 	@go build -o bin/wallet ./cmd/main.go
@@ -80,11 +87,15 @@ docker-build:
 
 # ==================== Database ====================
 db-up:
-	@echo "$(COLOR_YELLOW)🐳 Starting PostgreSQL...$(COLOR_RESET)"
-	@docker compose up -d postgres || docker compose up -d
+	@echo "$(COLOR_YELLOW)🐳 Starting all Docker services (PostgreSQL, Prometheus, Grafana, Swagger UI)...$(COLOR_RESET)"
+	@docker compose up -d
 	@echo "$(COLOR_YELLOW)⏳ Waiting for database to be ready...$(COLOR_RESET)"
 	@sleep 3
-	@echo "$(COLOR_GREEN)✅ Database service started$(COLOR_RESET)"
+	@echo "$(COLOR_GREEN)✅ All services started:$(COLOR_RESET)"
+	@echo "   ✓ PostgreSQL (5433)"
+	@echo "   ✓ Prometheus (9090)"
+	@echo "   ✓ Grafana (3000)"
+	@echo "   ✓ Swagger UI (8081)"
 
 db-down:
 	@echo "$(COLOR_YELLOW)🛑 Stopping database services...$(COLOR_RESET)"
