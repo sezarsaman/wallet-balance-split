@@ -1,0 +1,37 @@
+package models
+
+import "time"
+
+type Transaction struct {
+	ID        int        `json:"id"`
+	UserID    int        `json:"user_id"`
+	Amount    int64      `json:"amount"` // positive for charge, negative for withdraw
+	Type      string     `json:"type"`   // "charge" or "withdraw"
+	CreatedAt time.Time  `json:"created_at"`
+	ReleaseAt *time.Time `json:"release_at,omitempty"` // optional for charge
+}
+
+type Balance struct {
+	Total        int64 `json:"total"`
+	Withdrawable int64 `json:"withdrawable"`
+}
+
+type ChargeRequest struct {
+	UserID         int        `json:"user_id"`
+	Amount         int64      `json:"amount"`
+	IdempotencyKey string     `json:"idempotency_key"`
+	ReleaseAt      *time.Time `json:"release_at,omitempty"`
+}
+
+type WithdrawRequest struct {
+	UserID         int    `json:"user_id"`
+	Amount         int64  `json:"amount"`
+	IdempotencyKey string `json:"idempotency_key"`
+}
+
+type TransactionsResponse struct {
+	Transactions []Transaction `json:"transactions"`
+	Total        int           `json:"total"`
+	Page         int           `json:"page"`
+	Limit        int           `json:"limit"`
+}
