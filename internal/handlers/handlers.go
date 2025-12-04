@@ -1,23 +1,38 @@
 package handlers
 
 import (
-	"encoding/json" // use standard encoding/json for compatibility
-	"net/http"
-	"strconv"
-	"wallet-simulator/internal/models"
-	"wallet-simulator/internal/repository"
+"encoding/json"
+"log"
+"net/http"
+"strconv"
+"wallet-simulator/internal/models"
+"wallet-simulator/internal/repository"
+"wallet-simulator/internal/tasks"
+"wallet-simulator/internal/worker"
 
-	"github.com/go-chi/chi/v5"
+"github.com/go-chi/chi/v5"
 )
 
-func SetupRoutes(r chi.Router, repo *repository.Repository) {
-	r.Post("/charge", ChargeHandler(repo))
-	r.Get("/transactions", GetTransactionsHandler(repo))
-	r.Get("/balance", GetBalanceHandler(repo))
-	r.Post("/withdraw", WithdrawHandler(repo))
+// HandlerConfig حاوی dependencies برای handlers
+type HandlerConfig struct {
+	Repo       *repository.Repository
+	WorkerPool *worker.WorkerPool
 }
 
-func ChargeHandler(repo *repository.Repository) http.HandlerFunc {
+func SetupRoutes(r chi.Router, repo *repository.Repository, pool *worker.WorkerPool) {
+	config := &HandlerConfig{
+		Repo:       repo,
+		WorkerPool: pool,
+	}
+
+	r.Post("/charge", ChargeHandler(config))
+	r.Get("/transactions", GetTransactionsHandler(config))
+	r.Get("/balance", GetBalanceHandler(config))
+	r.Post("/withdraw", WithdrawHandler(config))
+	r.Get("/health", HealthHandler(config))
+}
+
+func ChargeHandler(cfg *HandlerConfig) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req models.ChargeRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -26,23 +41,30 @@ func ChargeHandler(repo *repository.Repository) http.HandlerFunc {
 		}
 
 		if req.IdempotencyKey == "" {
-			http.Error(w, "missing idempotency_key", 400)
+			http.Error(w, models.ErrMissingIdempotencyKey.Error(), http.StatusBadRequest)
 			return
 		}
 		if req.Amount <= 0 {
-			http.Error(w, "invalid amount", http.StatusBadRequest)
+			http.Error(w, models.ErrInvalidAmount.Error(), http.StatusBadRequest)
 			return
 		}
-		err := repo.Charge(req.UserID, req.Amount, req.ReleaseAt, req.IdempotencyKey)
+
+		err := cfg.Repo.Charge(req.UserID, req.Amount, req.ReleaseAt, req.IdempotencyKey)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			if err == models.ErrDuplicateRequest {
+				http.Error(w, err.Error(), http.StatusConflict)
+			} else {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+			}
 			return
 		}
-		json.NewEncoder(w).Encode(map[string]string{"message": "charged"})
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{"message": "charged", "idempotency_key": req.IdempotencyKey})
 	}
 }
 
-func GetTransactionsHandler(repo *repository.Repository) http.HandlerFunc {
+func GetTransactionsHandler(cfg *HandlerConfig) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, _ := strconv.Atoi(r.URL.Query().Get("user_id"))
 		page, _ := strconv.Atoi(r.URL.Query().Get("page"))
@@ -53,57 +75,97 @@ func GetTransactionsHandler(repo *repository.Repository) http.HandlerFunc {
 		if limit == 0 {
 			limit = 10
 		}
-		transactions, total, err := repo.GetTransactions(userID, page, limit)
+
+		transactions, total, err := cfg.Repo.GetTransactions(userID, page, limit)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+
+		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(models.TransactionsResponse{
-			Transactions: transactions,
-			Total:        total,
-			Page:         page,
-			Limit:        limit,
-		})
+Transactions: transactions,
+Total:        total,
+Page:         page,
+Limit:        limit,
+})
 	}
 }
 
-func GetBalanceHandler(repo *repository.Repository) http.HandlerFunc {
+func GetBalanceHandler(cfg *HandlerConfig) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, _ := strconv.Atoi(r.URL.Query().Get("user_id"))
-		total, err := repo.GetTotalBalance(userID)
+
+		total, err := cfg.Repo.GetTotalBalance(userID)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		withdrawable, err := repo.GetWithdrawableBalance(userID)
+
+		withdrawable, err := cfg.Repo.GetWithdrawableBalance(userID)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+
+		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(models.Balance{Total: total, Withdrawable: withdrawable})
 	}
 }
 
-func WithdrawHandler(repo *repository.Repository) http.HandlerFunc {
+func WithdrawHandler(cfg *HandlerConfig) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req models.WithdrawRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
+
 		if req.Amount <= 0 {
-			http.Error(w, "invalid amount", http.StatusBadRequest)
+			http.Error(w, models.ErrInvalidAmount.Error(), http.StatusBadRequest)
 			return
 		}
+
 		if req.IdempotencyKey == "" {
-			http.Error(w, "missing idempotency_key", 400)
+			http.Error(w, models.ErrMissingIdempotencyKey.Error(), http.StatusBadRequest)
 			return
 		}
-		err := repo.Withdraw(req.UserID, req.Amount, req.IdempotencyKey)
+
+		err := cfg.Repo.Withdraw(req.UserID, req.Amount, req.IdempotencyKey)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			if err == models.ErrDuplicateRequest {
+				http.Error(w, err.Error(), http.StatusConflict)
+			} else if err == models.ErrInsufficientBalance {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+			} else {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+			}
 			return
 		}
-		json.NewEncoder(w).Encode(map[string]string{"message": "withdrawn"})
+
+		// Submit bank withdrawal task to worker pool asynchronously
+		task := tasks.NewBankWithdrawalTask(cfg.Repo, req.UserID, req.Amount, req.IdempotencyKey)
+		if err := cfg.WorkerPool.Submit(task); err != nil {
+			log.Printf("⚠️ Failed to submit withdrawal task: %v", err)
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{
+"message": "withdrawal request submitted",
+"idempotency_key": req.IdempotencyKey,
+"status": "pending",
+})
+	}
+}
+
+// HealthHandler برای health checks
+func HealthHandler(cfg *HandlerConfig) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		queueLen := cfg.WorkerPool.GetQueueLength()
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{
+"status": "ok",
+"queue_length": queueLen,
+})
 	}
 }

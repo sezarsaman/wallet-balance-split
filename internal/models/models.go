@@ -1,12 +1,16 @@
 package models
 
-import "time"
+import (
+	"errors"
+	"time"
+)
 
 type Transaction struct {
 	ID        int        `json:"id"`
 	UserID    int        `json:"user_id"`
 	Amount    int64      `json:"amount"` // positive for charge, negative for withdraw
 	Type      string     `json:"type"`   // "charge" or "withdraw"
+	Status    string     `json:"status"` // "pending", "completed", "failed"
 	CreatedAt time.Time  `json:"created_at"`
 	ReleaseAt *time.Time `json:"release_at,omitempty"` // optional for charge
 }
@@ -35,3 +39,13 @@ type TransactionsResponse struct {
 	Page         int           `json:"page"`
 	Limit        int           `json:"limit"`
 }
+
+// Custom errors
+var (
+	ErrDuplicateRequest          = errors.New("duplicate request - idempotency key already exists")
+	ErrInsufficientBalance       = errors.New("insufficient withdrawable balance")
+	ErrBankFailed                = errors.New("bank withdrawal failed")
+	ErrInvalidAmount             = errors.New("invalid amount")
+	ErrMissingIdempotencyKey     = errors.New("missing idempotency_key")
+	ErrUserNotFound              = errors.New("user not found")
+)

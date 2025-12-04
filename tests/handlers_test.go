@@ -9,13 +9,15 @@ import (
 	"wallet-simulator/internal/handlers"
 	"wallet-simulator/internal/models"
 	"wallet-simulator/internal/repository"
+	"wallet-simulator/internal/worker"
 
 	"github.com/go-chi/chi/v5"
 )
 
 func setupRouter(repo *repository.Repository) chi.Router {
 	r := chi.NewRouter()
-	handlers.SetupRoutes(r, repo)
+	pool := worker.NewWorkerPool(10)
+	handlers.SetupRoutes(r, repo, pool)
 	return r
 }
 
@@ -23,7 +25,7 @@ func TestChargeHandler(t *testing.T) {
 	repo := setupTestDB()
 	r := setupRouter(repo)
 
-	reqBody, _ := json.Marshal(models.ChargeRequest{UserID: 1, Amount: 1000})
+	reqBody, _ := json.Marshal(models.ChargeRequest{UserID: 1, Amount: 1000, IdempotencyKey: "test-1"})
 	req := httptest.NewRequest("POST", "/charge", bytes.NewReader(reqBody))
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
