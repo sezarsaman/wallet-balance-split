@@ -1,0 +1,95 @@
+package migration
+
+import (
+	"database/sql"
+	"fmt"
+	"log"
+)
+
+// Migrator مسئول اجرای مایگریشن‌ها است
+type Migrator struct {
+	db *sql.DB
+}
+
+// New یک نمونه جدید از Migrator می‌سازد
+func New(db *sql.DB) *Migrator {
+	return &Migrator{db: db}
+}
+
+// Up تمام مایگریشن‌ها را اجرا می‌کند
+func (m *Migrator) Up() error {
+	log.Println("🔄 Running migrations...")
+
+	migrations := []struct {
+		name string
+		sql  string
+	}{
+		{
+			name: "create_transactions_table",
+			sql: `
+				CREATE TABLE IF NOT EXISTS transactions (
+					id SERIAL PRIMARY KEY,
+					idempotency_key VARCHAR(255) UNIQUE,
+					user_id INTEGER NOT NULL,
+					amount BIGINT NOT NULL,
+					type VARCHAR(10) NOT NULL,
+					status VARCHAR(20) DEFAULT 'pending',
+					created_at TIMESTAMP NOT NULL,
+					release_at TIMESTAMP,
+					updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+				);
+			`,
+		},
+		{
+			name: "create_idx_user_id",
+			sql:  `CREATE INDEX IF NOT EXISTS idx_user_id ON transactions(user_id);`,
+		},
+		{
+			name: "add_updated_at_column",
+			sql:  `ALTER TABLE transactions ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;`,
+		},
+		{
+			name: "create_idx_created_at",
+			sql:  `CREATE INDEX IF NOT EXISTS idx_created_at ON transactions(created_at);`,
+		},
+		{
+			name: "create_idx_status",
+			sql:  `CREATE INDEX IF NOT EXISTS idx_status ON transactions(status);`,
+		},
+		{
+			name: "create_idx_idempotency_key",
+			sql:  `CREATE INDEX IF NOT EXISTS idx_idempotency_key ON transactions(idempotency_key);`,
+		},
+	}
+
+	for _, migration := range migrations {
+		log.Printf("  ↳ Running: %s", migration.name)
+		if _, err := m.db.Exec(migration.sql); err != nil {
+			return fmt.Errorf("migration '%s' failed: %w", migration.name, err)
+		}
+		log.Printf("  ✅ %s completed", migration.name)
+	}
+
+	log.Println("✅ All migrations completed successfully")
+	return nil
+}
+
+// Down تمام جداول را حذف می‌کند (خطرناک!)
+func (m *Migrator) Down() error {
+	log.Println("⚠️  WARNING: Dropping all tables...")
+
+	tables := []string{
+		"transactions",
+	}
+
+	for _, table := range tables {
+		log.Printf("  ↳ Dropping table: %s", table)
+		if _, err := m.db.Exec(fmt.Sprintf("DROP TABLE IF EXISTS %s CASCADE", table)); err != nil {
+			return fmt.Errorf("failed to drop table %s: %w", table, err)
+		}
+		log.Printf("  ✅ Table %s dropped", table)
+	}
+
+	log.Println("✅ All tables dropped")
+	return nil
+}

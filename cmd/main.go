@@ -1,68 +1,57 @@
 package main
 
 import (
-	"context"
-	"database/sql"
-	"log"
-	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
-	"wallet-simulator/internal/handlers"
-	"wallet-simulator/internal/repository"
-	"wallet-simulator/internal/worker"
+"context"
+"database/sql"
+"log"
+"net/http"
+"os"
+"os/signal"
+"syscall"
+"time"
+"wallet-simulator/internal/config"
+"wallet-simulator/internal/handlers"
+"wallet-simulator/internal/migration"
+"wallet-simulator/internal/repository"
+"wallet-simulator/internal/worker"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
-	_ "github.com/lib/pq"
+"github.com/go-chi/chi/v5"
+"github.com/go-chi/chi/v5/middleware"
+_ "github.com/lib/pq"
 )
 
 func main() {
-	db, err := sql.Open("postgres", "postgres://postgres:password@localhost:5432/wallet?sslmode=disable")
+	// ✅ Load configuration from .env
+	cfg := config.Load()
+	log.Println(cfg.String())
+
+	// ✅ Connect to database using config
+	db, err := sql.Open("postgres", cfg.GetDSN())
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer db.Close()
 
 	// ✅ Connection Pooling Configuration
-	// For handling 10,000 transactions/hour (≈3 req/sec)
-	db.SetMaxOpenConns(100)      // Maximum concurrent connections
-	db.SetMaxIdleConns(25)       // Keep 25 idle connections ready
-	db.SetConnMaxLifetime(5 * time.Minute) // Recycle connections every 5 minutes
+	db.SetMaxOpenConns(cfg.DB.MaxOpenConns)
+	db.SetMaxIdleConns(cfg.DB.MaxIdleConns)
+	db.SetConnMaxLifetime(time.Duration(cfg.DB.ConnMaxLifetimeMin) * time.Minute)
 
 	if err := db.Ping(); err != nil {
 		log.Fatalf("Database connection failed: %v", err)
 	}
 	log.Println("✅ Database connected with connection pooling")
 
+	// ✅ Run migrations
+	m := migration.New(db)
+	if err := m.Up(); err != nil {
+		log.Fatalf("Migration failed: %v", err)
+	}
+
 	repo := repository.NewRepository(db)
 
-	// ✅ Create tables with proper schema
-	_, err = db.Exec(`
-		CREATE TABLE IF NOT EXISTS transactions (
-			id SERIAL PRIMARY KEY,
-			idempotency_key VARCHAR(255) UNIQUE,
-			user_id INTEGER NOT NULL,
-			amount BIGINT NOT NULL,
-			type VARCHAR(10) NOT NULL,
-			status VARCHAR(20) DEFAULT 'pending',
-			created_at TIMESTAMP NOT NULL,
-			release_at TIMESTAMP
-		);
-		
-		CREATE INDEX IF NOT EXISTS idx_user_id ON transactions(user_id);
-		CREATE INDEX IF NOT EXISTS idx_created_at ON transactions(created_at);
-		CREATE INDEX IF NOT EXISTS idx_status ON transactions(status);
-	`)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Println("✅ Database tables created")
-
 	// ✅ Initialize Worker Pool
-	// For 10k req/hour with 3-4 req/sec, 50 workers is optimal
-	workerPool := worker.NewWorkerPool(50)
+	workerPool := worker.NewWorkerPool(cfg.WorkerPool.Size)
 	defer func() {
 		log.Println("🛑 Shutting down worker pool...")
 		if err := workerPool.Shutdown(10 * time.Second); err != nil {
@@ -78,11 +67,11 @@ func main() {
 
 	// ✅ HTTP Server Configuration
 	server := &http.Server{
-		Addr:           ":8080",
+		Addr:           cfg.Server.Host + ":" + cfg.Server.Port,
 		Handler:        r,
-		ReadTimeout:    15 * time.Second,
-		WriteTimeout:   15 * time.Second,
-		IdleTimeout:    60 * time.Second,
+		ReadTimeout:    time.Duration(cfg.Server.ReadTimeoutSec) * time.Second,
+		WriteTimeout:   time.Duration(cfg.Server.WriteTimeoutSec) * time.Second,
+		IdleTimeout:    time.Duration(cfg.Server.IdleTimeoutSec) * time.Second,
 		MaxHeaderBytes: 1 << 20, // 1MB
 	}
 
@@ -106,19 +95,14 @@ func main() {
 	log.Println(sep)
 	log.Println("🚀 Wallet Balance Split Service")
 	log.Println(sep)
-	log.Println("📊 Configuration:")
-	log.Println("   - Max Open Connections: 100")
-	log.Println("   - Max Idle Connections: 25")
-	log.Println("   - Worker Pool Size: 50")
-	log.Println("   - Worker Queue Buffer: 100")
-	log.Println(sep)
-	log.Println("🌐 Server running on http://localhost:8080")
 	log.Println("📌 Available endpoints:")
 	log.Println("   POST   /charge        - شارژ کردن")
 	log.Println("   POST   /withdraw      - برداشت")
 	log.Println("   GET    /balance       - موجودی")
 	log.Println("   GET    /transactions  - تاریخچه تراکنش‌ها")
 	log.Println("   GET    /health        - وضعیت سرویس")
+	log.Println(sep)
+	log.Printf("🌐 Server running on http://%s:%s\n", cfg.Server.Host, cfg.Server.Port)
 	log.Println(sep)
 
 	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {

@@ -1,0 +1,91 @@
+2025/12/04 18:06:52 ==================================================
+📋 Configuration Loaded
+==================================================
+Database: localhost:5433/wallet
+Connection Pool: Max=100, Idle=25, Lifetime=5m
+Worker Pool: Size=50, Queue=100
+Server: localhost:8080
+App Environment: development (Log: debug)
+==================================================
+
+2025/12/04 18:06:52 ✅ Database connected with connection pooling
+2025/12/04 18:06:52 🔄 Running migrations...
+2025/12/04 18:06:52   ↳ Running: create_transactions_table
+2025/12/04 18:06:52   ✅ create_transactions_table completed
+2025/12/04 18:06:52   ↳ Running: create_idx_user_id
+2025/12/04 18:06:52   ✅ create_idx_user_id completed
+2025/12/04 18:06:52   ↳ Running: create_idx_created_at
+2025/12/04 18:06:52   ✅ create_idx_created_at completed
+2025/12/04 18:06:52   ↳ Running: create_idx_status
+2025/12/04 18:06:52   ✅ create_idx_status completed
+2025/12/04 18:06:52   ↳ Running: create_idx_idempotency_key
+2025/12/04 18:06:52   ✅ create_idx_idempotency_key completed
+2025/12/04 18:06:52 ✅ All migrations completed successfully
+2025/12/04 18:06:52 ✅ Worker Pool initialized with 50 workers
+2025/12/04 18:06:52 ==================================================
+2025/12/04 18:06:52 🚀 Wallet Balance Split Service
+2025/12/04 18:06:52 ==================================================
+2025/12/04 18:06:52 📌 Available endpoints:
+2025/12/04 18:06:52    POST   /charge        - شارژ کردن
+2025/12/04 18:06:52    POST   /withdraw      - برداشت
+2025/12/04 18:06:52    GET    /balance       - موجودی
+2025/12/04 18:06:52    GET    /transactions  - تاریخچه تراکنش‌ها
+2025/12/04 18:06:52    GET    /health        - وضعیت سرویس
+2025/12/04 18:06:52 ==================================================
+2025/12/04 18:06:52 🌐 Server running on http://localhost:8080
+2025/12/04 18:06:52 ==================================================
+2025/12/04 18:08:55 
+🛑 Shutdown signal received
+2025/12/04 18:08:55 ✅ Server stopped
+2025/12/04 18:08:55 🛑 Shutting down worker pool...
+2025/12/04 18:08:55 🛑 Worker 22 shutting down
+2025/12/04 18:08:55 🛑 Worker 3 shutting down
+2025/12/04 18:08:55 🛑 Worker 2 shutting down
+2025/12/04 18:08:55 🛑 Worker 8 shutting down
+2025/12/04 18:08:55 🛑 Worker 25 shutting down
+2025/12/04 18:08:55 🛑 Worker 4 shutting down
+2025/12/04 18:08:55 🛑 Worker 5 shutting down
+2025/12/04 18:08:55 🛑 Worker 1 shutting down
+2025/12/04 18:08:55 🛑 Worker 0 shutting down
+2025/12/04 18:08:55 🛑 Worker 13 shutting down
+2025/12/04 18:08:55 🛑 Worker 7 shutting down
+2025/12/04 18:08:55 🛑 Worker 23 shutting down
+2025/12/04 18:08:55 🛑 Worker 15 shutting down
+2025/12/04 18:08:55 🛑 Worker 6 shutting down
+2025/12/04 18:08:55 🛑 Worker 16 shutting down
+2025/12/04 18:08:55 🛑 Worker 40 shutting down
+2025/12/04 18:08:55 🛑 Worker 30 shutting down
+2025/12/04 18:08:55 🛑 Worker 24 shutting down
+2025/12/04 18:08:55 🛑 Worker 38 shutting down
+2025/12/04 18:08:55 🛑 Worker 17 shutting down
+2025/12/04 18:08:55 🛑 Worker 12 shutting down
+2025/12/04 18:08:55 🛑 Worker 33 shutting down
+2025/12/04 18:08:55 🛑 Worker 14 shutting down
+2025/12/04 18:08:55 🛑 Worker 10 shutting down
+2025/12/04 18:08:55 🛑 Worker 9 shutting down
+2025/12/04 18:08:55 🛑 Worker 49 shutting down
+2025/12/04 18:08:55 🛑 Worker 11 shutting down
+2025/12/04 18:08:55 🛑 Worker 27 shutting down
+2025/12/04 18:08:55 🛑 Worker 26 shutting down
+2025/12/04 18:08:55 🛑 Worker 28 shutting down
+2025/12/04 18:08:55 🛑 Worker 32 shutting down
+2025/12/04 18:08:55 🛑 Worker 19 shutting down
+2025/12/04 18:08:55 🛑 Worker 48 shutting down
+2025/12/04 18:08:55 🛑 Worker 47 shutting down
+2025/12/04 18:08:55 🛑 Worker 37 shutting down
+2025/12/04 18:08:55 🛑 Worker 45 shutting down
+2025/12/04 18:08:55 🛑 Worker 21 shutting down
+2025/12/04 18:08:55 🛑 Worker 46 shutting down
+2025/12/04 18:08:55 🛑 Worker 36 shutting down
+2025/12/04 18:08:55 🛑 Worker 43 shutting down
+2025/12/04 18:08:55 🛑 Worker 42 shutting down
+2025/12/04 18:08:55 🛑 Worker 35 shutting down
+2025/12/04 18:08:55 🛑 Worker 41 shutting down
+2025/12/04 18:08:55 🛑 Worker 34 shutting down
+2025/12/04 18:08:55 🛑 Worker 44 shutting down
+2025/12/04 18:08:55 🛑 Worker 29 shutting down
+2025/12/04 18:08:55 🛑 Worker 20 shutting down
+2025/12/04 18:08:55 🛑 Worker 31 shutting down
+2025/12/04 18:08:55 🛑 Worker 39 shutting down
+2025/12/04 18:08:55 🛑 Worker 18 shutting down
+2025/12/04 18:08:55 ✅ Worker Pool shutdown successfully

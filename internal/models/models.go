@@ -42,10 +42,10 @@ type TransactionsResponse struct {
 
 // Custom errors
 var (
-	ErrDuplicateRequest          = errors.New("duplicate request - idempotency key already exists")
-	ErrInsufficientBalance       = errors.New("insufficient withdrawable balance")
-	ErrBankFailed                = errors.New("bank withdrawal failed")
-	ErrInvalidAmount             = errors.New("invalid amount")
-	ErrMissingIdempotencyKey     = errors.New("missing idempotency_key")
-	ErrUserNotFound              = errors.New("user not found")
+	ErrDuplicateRequest      = errors.New("duplicate request - idempotency key already exists")
+	ErrInsufficientBalance   = errors.New("insufficient withdrawable balance")
+	ErrBankFailed            = errors.New("bank withdrawal failed")
+	ErrInvalidAmount         = errors.New("invalid amount")
+	ErrMissingIdempotencyKey = errors.New("missing idempotency_key")
+	ErrUserNotFound          = errors.New("user not found")
 )
