@@ -3,7 +3,7 @@ module wallet-simulator
 go 1.25
 
 require (
-	github.com/go-chi/chi/v5 v5.0.10
+	github.com/go-chi/chi/v5 v5.2.3
 	github.com/lib/pq v1.10.9
 	github.com/prometheus/client_golang v1.23.2
 	github.com/swaggo/swag v1.16.6
