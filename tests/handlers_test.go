@@ -31,7 +31,7 @@ func TestChargeHandler(t *testing.T) {
 	r.ServeHTTP(w, req)
 
 	if w.Code != http.StatusOK {
-		t.Errorf("expected 200, got %d", w.Code)
+		t.Errorf("expected 200, got %d; resp: %s", w.Code, w.Body.String())
 	}
 }
 
@@ -44,6 +44,6 @@ func TestGetBalanceHandler(t *testing.T) {
 	r.ServeHTTP(w, req)
 
 	if w.Code != http.StatusOK {
-		t.Errorf("expected 200, got %d", w.Code)
+		t.Errorf("expected 200, got %d; resp: %s", w.Code, w.Body.String())
 	}
 }
