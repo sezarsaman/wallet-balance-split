@@ -18,5 +18,44 @@ services:
       timeout: 5s
       retries: 5
 
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: wallet_prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=7d'
+    ports:
+      - "9090:9090"
+    depends_on:
+      - postgres
+    networks:
+      - wallet_network
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: wallet_grafana
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: 'false'
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    networks:
+      - wallet_network
+
 volumes:
   postgres_data:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  wallet_network:
+    driver: bridge
+

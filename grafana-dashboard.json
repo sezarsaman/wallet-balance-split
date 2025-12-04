@@ -1,0 +1,97 @@
+{
+  "dashboard": {
+    "title": "Wallet Balance Split - Service Metrics",
+    "description": "Real-time monitoring of wallet balance split service",
+    "timezone": "UTC",
+    "panels": [
+      {
+        "title": "Request Rate (req/sec)",
+        "targets": [
+          {
+            "expr": "rate(http_requests_total[1m])",
+            "legendFormat": "{{ method }} {{ route }}"
+          }
+        ],
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0}
+      },
+      {
+        "title": "Request Duration (p95)",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))",
+            "legendFormat": "{{ method }} {{ route }}"
+          }
+        ],
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0}
+      },
+      {
+        "title": "Error Rate by Endpoint",
+        "targets": [
+          {
+            "expr": "rate(http_errors_total[1m])",
+            "legendFormat": "{{ method }} {{ route }}"
+          }
+        ],
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8}
+      },
+      {
+        "title": "Database Connections",
+        "targets": [
+          {
+            "expr": "pg_stat_activity_count",
+            "legendFormat": "Active connections"
+          }
+        ],
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8}
+      },
+      {
+        "title": "DB Query Duration (p99)",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.99, rate(db_query_time_seconds_bucket[5m]))",
+            "legendFormat": "{{ operation }}"
+          }
+        ],
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16}
+      },
+      {
+        "title": "Worker Queue Length",
+        "targets": [
+          {
+            "expr": "worker_queue_length",
+            "legendFormat": "Queue depth"
+          }
+        ],
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16}
+      },
+      {
+        "title": "Total Charges Amount (sum)",
+        "targets": [
+          {
+            "expr": "sum(rate(charge_amount_bucket[5m]))",
+            "legendFormat": "Charges per sec"
+          }
+        ],
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 24}
+      },
+      {
+        "title": "Total Withdraw Amount (sum)",
+        "targets": [
+          {
+            "expr": "sum(rate(withdraw_amount_bucket[5m]))",
+            "legendFormat": "Withdrawals per sec"
+          }
+        ],
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 24}
+      }
+    ]
+  }
+}

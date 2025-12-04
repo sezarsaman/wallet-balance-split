@@ -1,23 +1,25 @@
 package main
 
 import (
-"context"
-"database/sql"
-"log"
-"net/http"
-"os"
-"os/signal"
-"syscall"
-"time"
-"wallet-simulator/internal/config"
-"wallet-simulator/internal/handlers"
-"wallet-simulator/internal/migration"
-"wallet-simulator/internal/repository"
-"wallet-simulator/internal/worker"
+	"context"
+	"database/sql"
+	"log"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+	"wallet-simulator/internal/config"
+	"wallet-simulator/internal/handlers"
+	"wallet-simulator/internal/metrics"
+	"wallet-simulator/internal/migration"
+	"wallet-simulator/internal/repository"
+	"wallet-simulator/internal/worker"
 
-"github.com/go-chi/chi/v5"
-"github.com/go-chi/chi/v5/middleware"
-_ "github.com/lib/pq"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
+	_ "github.com/lib/pq"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func main() {
@@ -43,8 +45,8 @@ func main() {
 	log.Println("✅ Database connected with connection pooling")
 
 	// ✅ Run migrations
-	m := migration.New(db)
-	if err := m.Up(); err != nil {
+	migrator := migration.New(db)
+	if err := migrator.Up(); err != nil {
 		log.Fatalf("Migration failed: %v", err)
 	}
 
@@ -59,11 +61,18 @@ func main() {
 		}
 	}()
 
+	// ✅ Initialize Metrics
+	m := metrics.New()
+
 	// ✅ Setup Router
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
+	r.Use(handlers.MetricsMiddleware(m))
 	handlers.SetupRoutes(r, repo, workerPool)
+
+	// ✅ Expose Metrics Endpoint
+	r.Get("/metrics", promhttp.Handler().ServeHTTP)
 
 	// ✅ HTTP Server Configuration
 	server := &http.Server{

@@ -32,6 +32,12 @@ help:
 	@echo "  make run             → Run application (requires DB to be ready)"
 	@echo "  make dev             → Run with auto-reload (requires air)"
 	@echo ""
+	@echo "$(COLOR_GREEN)Monitoring:$(COLOR_RESET)"
+	@echo "  make db-up           → Starts Prometheus (9090) and Grafana (3000)"
+	@echo "  📊 Prometheus        → http://localhost:9090"
+	@echo "  📈 Grafana           → http://localhost:3000 (user: admin, pass: admin)"
+	@echo "  🔍 App Metrics       → http://localhost:8080/metrics"
+	@echo ""
 	@echo "$(COLOR_GREEN)Testing:$(COLOR_RESET)"
 	@echo "  make test            → Run tests"
 	@echo "  make test-coverage   → Run tests with coverage report"
@@ -128,6 +134,9 @@ run: bin/wallet
 			sleep 1; counter=$$((counter+1)); \
 		done; \
 		echo "Postgres appears to be listening on port $$PORT"; \
+		echo "Checking if port 8080 is free..."; \
+		lsof -iTCP:8080 -sTCP:LISTEN -t 2>/dev/null | xargs -r kill -9 2>/dev/null || true; \
+		sleep 1; \
 		echo "Launching app..."; \
 		./bin/wallet
 
@@ -166,12 +175,15 @@ stop:
 	@if [ -f ./wallet.pid ]; then \
 		PID=$$(cat ./wallet.pid); \
 		if kill -0 $$PID 2>/dev/null; then \
-			kill $$PID && echo "Killed process $$PID" || echo "Failed to kill $$PID"; \
+			kill -9 $$PID && echo "Killed process $$PID" || echo "Failed to kill $$PID"; \
 		fi; \
 		rm -f ./wallet.pid; \
 	else \
 		echo "No wallet.pid found"; \
 	fi
+	@echo "$(COLOR_YELLOW)🛑 Killing any process on port 8080 (if stuck)...$(COLOR_RESET)"
+	@lsof -iTCP:8080 -sTCP:LISTEN -t 2>/dev/null | xargs -r kill -9 2>/dev/null || true
+	@sleep 1
 	@echo "$(COLOR_YELLOW)🛑 Stopping docker compose services...$(COLOR_RESET)"
 	@docker compose down
 	@echo "$(COLOR_GREEN)✅ Stopped local app and containers$(COLOR_RESET)"
