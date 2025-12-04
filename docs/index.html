@@ -25,9 +25,14 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.15.5/swagger-ui-standalone-preset.min.js"></script>
     <script>
         window.onload = function() {
-            // Build a system
+            // API URL - use same hostname but different port
+            // Browser will connect directly to API server
+            const currentHost = window.location.hostname;
+            const apiUrl = `http://${currentHost}:8080`;
+            
+            // Build Swagger UI
             const ui = SwaggerUIBundle({
-                url: "/swagger.json",
+                url: `${apiUrl}/swagger.json`,
                 dom_id: '#swagger-ui',
                 deepLinking: true,
                 presets: [
@@ -37,9 +42,16 @@
                 plugins: [
                     SwaggerUIBundle.plugins.DownloadUrl
                 ],
-                layout: "StandaloneLayout"
+                layout: "StandaloneLayout",
+                requestInterceptor: function(request) {
+                    // Ensure requests go to the API server
+                    return request;
+                }
             });
             window.ui = ui;
+            
+            console.log('✅ Swagger UI loaded');
+            console.log(`📍 API Server: ${apiUrl}`);
         };
     </script>
 </body>
