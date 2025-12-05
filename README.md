@@ -49,10 +49,6 @@ make run
 
 The service will be available at `http://localhost:8080`.
 
-## 📚 Learn More
-
-For detailed architecture, code explanations, and interview preparation guides, see `INTERVIEW_PREP.html`.
-
 ## 🛠️ Useful Commands
 
 - **Refresh database**: `make refresh_db`
@@ -74,4 +70,3 @@ Default credentials (docker-compose):
 
 - Compiled binaries are ignored via `.gitignore` and should never be committed
 - Source code only in version control
-- See `INTERVIEW_PREP.html` for detailed concepts and interview tips
