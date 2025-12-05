@@ -1,6 +1,5 @@
 .PHONY: help setup build run migrate seed refresh clear clean test docker-up docker-down docker-logs stop
 
-# متغیرهای رنگی برای خروجی
 COLOR_RESET=\033[0m
 COLOR_BLUE=\033[34m
 COLOR_GREEN=\033[32m

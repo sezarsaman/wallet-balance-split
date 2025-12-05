@@ -20,33 +20,27 @@ func New(db *sql.DB) *Migrator {
 func (m *Migrator) Up() error {
 	log.Println("🔄 Running migrations...")
 
+	tx, err := m.db.Begin()
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback()
+
 	migrations := []struct {
 		name string
 		sql  string
 	}{
 		{
 			name: "create_transactions_table",
-			sql: `
-				CREATE TABLE IF NOT EXISTS transactions (
-					id SERIAL PRIMARY KEY,
-					idempotency_key VARCHAR(255) UNIQUE,
-					user_id INTEGER NOT NULL,
-					amount BIGINT NOT NULL,
-					type VARCHAR(10) NOT NULL,
-					status VARCHAR(20) DEFAULT 'pending',
-					created_at TIMESTAMP NOT NULL,
-					release_at TIMESTAMP,
-					updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-				);
-			`,
+			sql:  `CREATE TABLE IF NOT EXISTS transactions (id SERIAL PRIMARY KEY, idempotency_key VARCHAR(255) UNIQUE, user_id INTEGER NOT NULL, amount BIGINT NOT NULL, "type" VARCHAR(10) NOT NULL, created_at TIMESTAMP NOT NULL, release_at TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);`,
+		},
+		{
+			name: "add_status_column",
+			sql:  `ALTER TABLE transactions ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'pending';`,
 		},
 		{
 			name: "create_idx_user_id",
 			sql:  `CREATE INDEX IF NOT EXISTS idx_user_id ON transactions(user_id);`,
-		},
-		{
-			name: "add_updated_at_column",
-			sql:  `ALTER TABLE transactions ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;`,
 		},
 		{
 			name: "create_idx_created_at",
@@ -64,10 +58,16 @@ func (m *Migrator) Up() error {
 
 	for _, migration := range migrations {
 		log.Printf("  ↳ Running: %s", migration.name)
-		if _, err := m.db.Exec(migration.sql); err != nil {
+		result, err := tx.Exec(migration.sql)
+		if err != nil {
 			return fmt.Errorf("migration '%s' failed: %w", migration.name, err)
 		}
-		log.Printf("  ✅ %s completed", migration.name)
+		rows, _ := result.RowsAffected()
+		log.Printf("  ✅ %s completed (rows affected: %d)", migration.name, rows)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
 	log.Println("✅ All migrations completed successfully")
