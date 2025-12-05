@@ -49,6 +49,52 @@ make run
 
 The service will be available at `http://localhost:8080`.
 
+## 📖 API Documentation
+
+You can explore the API in two ways:
+
+### 1. Swagger UI (Interactive)
+Visit `http://localhost:8080/swagger` in your browser to see and test all endpoints interactively.
+
+### 2. REST Endpoints
+
+#### Health Check
+```bash
+curl http://localhost:8080/health
+```
+
+#### Get User Balance
+```bash
+curl http://localhost:8080/balance/123
+```
+
+#### Charge Account (Synchronous)
+```bash
+curl -X POST http://localhost:8080/charge \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_id": 123,
+    "amount": 5000,
+    "idempotency_key": "charge-001"
+  }'
+```
+
+#### Withdraw (Asynchronous)
+```bash
+curl -X POST http://localhost:8080/withdraw \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_id": 123,
+    "amount": 1000,
+    "idempotency_key": "withdraw-001"
+  }'
+```
+
+#### Get Transactions
+```bash
+curl http://localhost:8080/transactions/123
+```
+
 ## 🛠️ Useful Commands
 
 - **Refresh database**: `make refresh_db`
