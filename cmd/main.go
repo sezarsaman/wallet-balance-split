@@ -78,7 +78,7 @@ func main() {
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.AllowContentType("application/json"))
 
-	// ✅ CORS Middleware - اجازه Swagger UI درون container
+	// ✅ CORS Middleware Setup
 	r.Use(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Access-Control-Allow-Origin", "*")

@@ -7,21 +7,17 @@ import (
 	"time"
 )
 
-// Seeder مسئول اضافه کردن داده‌های آزمایشی است
 type Seeder struct {
 	db *sql.DB
 }
 
-// New یک نمونه جدید از Seeder می‌سازد
 func New(db *sql.DB) *Seeder {
 	return &Seeder{db: db}
 }
 
-// Seed تمام داده‌های آزمایشی را اضافه می‌کند
 func (s *Seeder) Seed() error {
 	log.Println("🌱 Seeding database...")
 
-	// داده‌های آزمایشی
 	testData := []struct {
 		userID         int
 		amount         int64
@@ -49,8 +45,7 @@ func (s *Seeder) Seed() error {
 
 	now := time.Now()
 	for _, data := range testData {
-		// set release_at: for charges, put a hold that releases in ~3 hours;
-		// for pending withdrawals, set release a few hours ahead as well.
+
 		var releaseAt interface{}
 		if data.txType == "charge" {
 			t := now.Add(3 * time.Hour)
@@ -82,8 +77,6 @@ func (s *Seeder) Seed() error {
 			return fmt.Errorf("failed to seed transaction: %w", err)
 		}
 
-		// If this row already existed (ON CONFLICT DO NOTHING), or release_at was NULL,
-		// make sure release_at is set for charges and pending withdrawals.
 		if data.txType == "charge" {
 			_, _ = s.db.Exec(`
 						UPDATE transactions
@@ -106,7 +99,6 @@ func (s *Seeder) Seed() error {
 	return nil
 }
 
-// Clear تمام داده‌های آزمایشی را حذف می‌کند
 func (s *Seeder) Clear() error {
 	log.Println("🗑️  Clearing seed data...")
 

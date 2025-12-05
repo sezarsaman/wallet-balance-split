@@ -36,9 +36,6 @@ type Config struct {
 		IdleTimeoutSec  int
 	}
 
-	// Redis
-	// Redis removed (not used)
-
 	// App
 	App struct {
 		Env      string
@@ -46,7 +43,6 @@ type Config struct {
 	}
 }
 
-// Load تمام متغیرهای محیطی را بارگذاری می‌کند
 func Load() *Config {
 	cfg := &Config{}
 
@@ -72,8 +68,6 @@ func Load() *Config {
 	cfg.Server.WriteTimeoutSec = getEnvInt("SERVER_WRITE_TIMEOUT_SECONDS", 15)
 	cfg.Server.IdleTimeoutSec = getEnvInt("SERVER_IDLE_TIMEOUT_SECONDS", 60)
 
-	// Redis removed (not used)
-
 	// App
 	cfg.App.Env = getEnv("APP_ENV", "development")
 	cfg.App.LogLevel = getEnv("LOG_LEVEL", "debug")
@@ -81,7 +75,6 @@ func Load() *Config {
 	return cfg
 }
 
-// GetDSN اتصال String را برای PostgreSQL می‌سازد
 func (c *Config) GetDSN() string {
 	return fmt.Sprintf(
 		"postgres://%s:%s@%s:%s/%s?sslmode=%s",
@@ -94,7 +87,6 @@ func (c *Config) GetDSN() string {
 	)
 }
 
-// String نمایش کامل Configuration
 func (c *Config) String() string {
 	var sb strings.Builder
 	sb.WriteString("==================================================\n")

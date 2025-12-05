@@ -7,12 +7,10 @@ import (
 	"time"
 )
 
-// Task تعریف یک کار که میتونه توسط worker pool انجام شود
 type Task interface {
 	Execute(ctx context.Context) error
 }
 
-// WorkerPool مدیریت کردن تعداد concurrent workers
 type WorkerPool struct {
 	workers   int
 	taskQueue chan Task
@@ -21,7 +19,6 @@ type WorkerPool struct {
 	cancel    context.CancelFunc
 }
 
-// NewWorkerPool ایجاد یک worker pool جدید
 func NewWorkerPool(workers int) *WorkerPool {
 	ctx, cancel := context.WithCancel(context.Background())
 	pool := &WorkerPool{
@@ -40,7 +37,6 @@ func NewWorkerPool(workers int) *WorkerPool {
 	return pool
 }
 
-// worker یک goroutine که tasks رو از queue پردازش میکند
 func (p *WorkerPool) worker(id int) {
 	defer p.wg.Done()
 
@@ -63,7 +59,6 @@ func (p *WorkerPool) worker(id int) {
 	}
 }
 
-// Submit یک task جدید به queue اضافه میکند
 func (p *WorkerPool) Submit(task Task) error {
 	select {
 	case <-p.ctx.Done():
@@ -75,7 +70,6 @@ func (p *WorkerPool) Submit(task Task) error {
 	}
 }
 
-// SubmitWithTimeout تلاش میکند task رو با timeout submit کند
 func (p *WorkerPool) SubmitWithTimeout(ctx context.Context, task Task) error {
 	select {
 	case <-p.ctx.Done():
@@ -87,7 +81,6 @@ func (p *WorkerPool) SubmitWithTimeout(ctx context.Context, task Task) error {
 	}
 }
 
-// Shutdown gracefully shutdown کردن worker pool
 func (p *WorkerPool) Shutdown(timeout time.Duration) error {
 	p.cancel()
 
@@ -107,7 +100,6 @@ func (p *WorkerPool) Shutdown(timeout time.Duration) error {
 	}
 }
 
-// GetQueueLength بازگرداندن طول queue (برای monitoring)
 func (p *WorkerPool) GetQueueLength() int {
 	return len(p.taskQueue)
 }
