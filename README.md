@@ -33,9 +33,9 @@ Worker Pool (50 workers)
 
 ## 📋 Prerequisites
 
-- Go 1.21+
-- PostgreSQL 12+
-- Docker (optional)
+- Go 1.25 (module set to go 1.25 in `go.mod`)
+- PostgreSQL (containerized via `docker-compose` in repo uses Postgres 15)
+- Docker & Docker Compose (recommended for local dev)
 
 ## 🚀 Quick Start
 
@@ -45,20 +45,32 @@ cd /home/saman/Projects/wbs
 go mod download
 ```
 
-### 2. Database Setup
-```bash
-# Create database
-createdb wallet
+### 2. Database & services (recommended)
+The repo includes a `docker-compose.yml` that starts PostgreSQL, Prometheus, Grafana and a Swagger UI.
 
-# Or using Docker
-docker run --name postgres \
-  -e POSTGRES_PASSWORD=password \
-  -e POSTGRES_DB=wallet \
-  -p 5432:5432 \
-  -d postgres:15
+Start services with Make (recommended):
+```bash
+make db-up
 ```
 
+Postgres will be available on `localhost:5433` (container maps 5432->5433). Default DB credentials used by the project are:
+
+- user: `postgres`
+- password: `password`
+- database: `wallet`
+
+If you prefer to run Postgres locally without Docker, create a database named `wallet` and set `TEST_DATABASE_URL`/`.env` accordingly.
+
 ### 3. Run Service
+
+You can run the service directly or via the Makefile which wires up DB services automatically.
+
+Run using Make (recommended):
+```bash
+make run
+```
+
+Or run directly (ensure DB is running and `.env` is configured):
 ```bash
 go run ./cmd/main.go
 ```
@@ -71,164 +83,84 @@ curl -X POST http://localhost:8080/charge \
   -H "Content-Type: application/json" \
   -d '{
     "user_id": 123,
-    "amount": 5000,
-    "idempotency_key": "charge-unique-1",
-    "release_at": "2024-01-20T10:00:00Z"
-  }'
-```
+    # Wallet Balance Split Service
 
-### 2. Withdraw (برداشت)
-```bash
-curl -X POST http://localhost:8080/withdraw \
-  -H "Content-Type: application/json" \
-  -d '{
-    "user_id": 123,
-    "amount": 1000,
-    "idempotency_key": "withdraw-unique-1"
-  }'
-```
+    This repository contains a small wallet service used for interview tasks. It's intentionally self-contained and includes a minimal Makefile to set up and run the project locally.
 
-### 3. Get Balance
-```bash
-curl http://localhost:8080/balance?user_id=123
-```
+    ## What this repo contains
 
-### 4. Get Transactions
-```bash
-curl http://localhost:8080/transactions?user_id=123&page=1&limit=10
-```
+    - Service implemented in Go (module `wallet-simulator`).
+    - HTTP API (Chi router) with endpoints: `/charge`, `/withdraw`, `/balance`, `/transactions`, `/health`.
+    - PostgreSQL migrations and a small seeder.
+    - Docker Compose for local development (Postgres, Prometheus, Grafana, Swagger UI).
 
-### 5. Health Check
-```bash
-curl http://localhost:8080/health
-```
+    ## Quick overview of important concepts
 
-## 🔧 Configuration
+    - Connection pooling: the DB layer uses `database/sql` connection pooling to limit concurrent connections and reuse them.
+    - Worker pool: withdrawals are handled asynchronously by a fixed-size worker pool to avoid blocking HTTP handlers on long bank calls.
+    - Idempotency: financial endpoints use `idempotency_key` to prevent duplicate processing.
 
-Tune these parameters in `cmd/main.go`:
+    ## How to setup & run (Make-based)
 
-```go
-// Connection Pool
-db.SetMaxOpenConns(100)         // ↑ for more concurrent queries
-db.SetMaxIdleConns(25)          // ↑ for connection reuse
-db.SetConnMaxLifetime(5 * time.Minute)
+    Prerequisites:
 
-// Worker Pool
-workerPool := worker.NewWorkerPool(50)  // ↑ for more concurrent workers
-```
+    - Docker & Docker Compose (recommended)
+    - Go 1.25
 
-## 📈 Performance Metrics
+    Steps:
 
-| Metric | Value |
-|--------|-------|
-| Peak Throughput | 10,000 tx/hour |
-| Concurrent Connections | 100 |
-| Worker Pool Size | 50 |
-| Task Queue Buffer | 100 |
-| Response Time (p50) | <50ms |
-| Response Time (p99) | <500ms |
+    1. Start services and build the project:
 
-## 🧪 Testing
+    ```bash
+    make init
+    ```
 
-```bash
-go test ./tests -v
-```
+    This will:
+    - copy `.env.example` to `.env` if missing
+    - start `docker compose up -d`
+    - run migrations and seed data
+    - build the binary into `bin/wallet`
 
-## 📚 Project Structure
+    2. Run the service:
 
-```
-.
-├── cmd/
-│   └── main.go              # Entry point
-├── internal/
-│   ├── handlers/            # HTTP request handlers
-│   ├── repository/          # Database operations
-│   ├── models/              # Data structures
-│   ├── worker/              # Worker pool implementation
-│   └── tasks/               # Async task implementations
-├── tests/                   # Unit tests
-├── go.mod                   # Dependencies
-└── SCALABILITY.md           # Detailed performance docs
-```
+    ```bash
+    make run
+    ```
 
-## 🔒 Error Handling
+    3. Useful commands:
 
-```
-409 Conflict          - Duplicate idempotency key
-400 Bad Request       - Invalid request (missing fields, bad amount)
-500 Internal Server   - Database or processing errors
-503 Service Unavailable - Worker pool queue full
-```
+    - Refresh database (recreate schema + seed): `make refresh_db`
+    - Stop services and app: `make stop`
+    - Full clean (remove volumes & artifacts): `make clean_all`
+    - Tail logs: `make logs`
+    - Show docker status: `make status`
+    - Help: `make help`
 
-## 🛡️ Key Features Explained
+    Default DB connection used by tests and CI:
 
-### Connection Pooling
-```go
-db.SetMaxOpenConns(100)   // Max 100 concurrent connections
-```
-- Reuses connections instead of creating new ones
-- Significantly improves performance
-- Prevents "too many connections" errors
+    ```
+    postgres://postgres:password@localhost:5433/wallet?sslmode=disable
+    ```
 
-### Worker Pool
-```go
-workerPool := worker.NewWorkerPool(50)  // 50 concurrent workers
-```
-- Fixed-size pool prevents unbounded goroutine creation
-- Efficient resource usage
-- Configurable queue buffer (100 tasks)
+    ## Binaries and git
 
-### Async Processing
-```
-Withdraw Request
-  ↓ (immediate response)
-Create Transaction (status='pending')
-  ↓ (async in background)
-Worker processes bank call
-  ↓
-Update Transaction status='completed'|'failed'
-```
+    Compiled binaries and build artifacts are ignored via `.gitignore` (`/bin/`). You should not commit binaries into Git; only source files and small config assets should be tracked.
 
-### Idempotency
-```
-Multiple requests with same idempotency_key
-  → Only first one succeeds
-  → Subsequent ones return 409 Conflict
-```
+    ## CI
 
-## 📖 Detailed Documentation
+    A simple GitHub Actions workflow is included in `.github/workflows/ci.yml` which starts a Postgres service, runs migrations, executes tests and builds the binary.
 
-For in-depth information about architecture and performance optimization, see [SCALABILITY.md](./SCALABILITY.md).
+    ## Tests
 
-## 🐛 Troubleshooting
+    Run tests locally (ensure DB is running via `make db-up` or `make init`):
 
-### "too many connections" error
-- Increase `SetMaxOpenConns()`
-- Check if connections are leaking (defer db.Close() missing)
+    ```bash
+    make db-up
+    go test ./... -v
+    ```
 
-### Worker queue full
-- Increase worker pool size
-- Increase queue buffer
-- Scale horizontally with multiple instances
+    Or use `make run` and open the endpoints.
 
-### Slow balance queries
-- Add indexes (already done in migrations)
-- Consider caching frequently accessed balances
+    ---
 
-## 🚢 Production Deployment
-
-1. Use environment variables for database URL
-2. Enable connection SSL
-3. Set up monitoring (Prometheus/Grafana)
-4. Configure logging (ELK stack)
-5. Use load balancer for multiple instances
-6. Set up database replication
-7. Configure backups
-
-## 📝 License
-
-MIT
-
-## 🤝 Contributing
-
-Contributions welcome! Please follow code style and add tests for new features.
+    If you need a more detailed overview for interview prep, see the generated `INTERVIEW_PREP.html` in the project root which contains explanations of the key components, design choices, concurrency considerations, and example exercises you may be asked to perform during an interview.

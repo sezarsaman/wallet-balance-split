@@ -1,0 +1,28 @@
+# Binaries
+/bin/
+main
+cli
+wallet
+
+# Environment files
+.env
+.env.local
+*.log
+
+# Coverage
+coverage.out
+coverage.html
+
+# Editor directories and files
+.vscode/
+.idea/
+*.swp
+
+# Go vendor
+/vendor/
+
+# OS files
+.DS_Store
+
+# Docker
+/docker-compose.override.yml
