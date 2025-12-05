@@ -13,7 +13,6 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-// HandlerConfig حاوی dependencies برای handlers
 type HandlerConfig struct {
 	Repo       *repository.Repository
 	WorkerPool *worker.WorkerPool
@@ -32,17 +31,6 @@ func SetupRoutes(r chi.Router, repo *repository.Repository, pool *worker.WorkerP
 	r.Get("/health", HealthHandler(config))
 }
 
-// ChargeHandler godoc
-// @Summary شارژ کردن حساب
-// @Description شارژ حساب کاربری با مبلغ مشخص
-// @Tags charge
-// @Accept json
-// @Produce json
-// @Param request body models.ChargeRequest true "درخواست شارژ"
-// @Success 200 {object} models.ChargeResponse "شارژ موفق"
-// @Failure 400 {object} models.ErrorResponse "درخواست نامعتبر"
-// @Failure 500 {object} models.ErrorResponse "خطای سرور"
-// @Router /charge [post]
 func ChargeHandler(cfg *HandlerConfig) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req models.ChargeRequest
@@ -75,16 +63,6 @@ func ChargeHandler(cfg *HandlerConfig) http.HandlerFunc {
 	}
 }
 
-// GetTransactionsHandler godoc
-// @Summary دریافت تاریخچه تراکنش‌ها
-// @Description دریافت لیست تمام تراکنش‌های یک کاربر
-// @Tags transactions
-// @Accept json
-// @Produce json
-// @Param user_id query int false "شناسه کاربر"
-// @Success 200 {object} []models.Transaction "لیست تراکنش‌ها"
-// @Failure 500 {object} models.ErrorResponse "خطای سرور"
-// @Router /transactions [get]
 func GetTransactionsHandler(cfg *HandlerConfig) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, _ := strconv.Atoi(r.URL.Query().Get("user_id"))
@@ -113,16 +91,6 @@ func GetTransactionsHandler(cfg *HandlerConfig) http.HandlerFunc {
 	}
 }
 
-// GetBalanceHandler godoc
-// @Summary دریافت موجودی حساب
-// @Description دریافت موجودی کل و قابل برداشت کاربر
-// @Tags balance
-// @Accept json
-// @Produce json
-// @Param user_id query int false "شناسه کاربر"
-// @Success 200 {object} models.BalanceResponse "موجودی حساب"
-// @Failure 500 {object} models.ErrorResponse "خطای سرور"
-// @Router /balance [get]
 func GetBalanceHandler(cfg *HandlerConfig) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, _ := strconv.Atoi(r.URL.Query().Get("user_id"))
@@ -144,17 +112,6 @@ func GetBalanceHandler(cfg *HandlerConfig) http.HandlerFunc {
 	}
 }
 
-// WithdrawHandler godoc
-// @Summary درخواست برداشت
-// @Description درخواست برداشت مبلغ از حساب (درخواست معوق می‌شود)
-// @Tags withdraw
-// @Accept json
-// @Produce json
-// @Param request body models.WithdrawRequest true "درخواست برداشت"
-// @Success 200 {object} models.WithdrawResponse "درخواست برداشت دریافت شد"
-// @Failure 400 {object} models.ErrorResponse "درخواست نامعتبر"
-// @Failure 500 {object} models.ErrorResponse "خطای سرور"
-// @Router /withdraw [post]
 func WithdrawHandler(cfg *HandlerConfig) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req models.WithdrawRequest
@@ -200,16 +157,6 @@ func WithdrawHandler(cfg *HandlerConfig) http.HandlerFunc {
 	}
 }
 
-// HealthHandler godoc
-// @Summary بررسی وضعیت سرویس
-// @Description بررسی سلامت سرویس و اتصال به دیتابیس
-// @Tags health
-// @Accept json
-// @Produce json
-// @Success 200 {object} models.HealthResponse "سرویس سالم است"
-// @Failure 500 {object} models.ErrorResponse "سرویس در وضعیت بد است"
-// @Router /health [get]
-// HealthHandler برای health checks
 func HealthHandler(cfg *HandlerConfig) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		queueLen := cfg.WorkerPool.GetQueueLength()

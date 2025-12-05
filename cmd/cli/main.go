@@ -13,7 +13,7 @@ import (
 )
 
 func main() {
-	// دستورات CLI
+
 	if len(os.Args) < 2 {
 		printUsage()
 		os.Exit(1)
@@ -21,28 +21,22 @@ func main() {
 
 	command := os.Args[1]
 
-	// بارگذاری config
 	cfg := config.Load()
 	fmt.Println(cfg)
 
-	// اتصال به database
 	db, err := sql.Open("postgres", cfg.GetDSN())
 	if err != nil {
 		log.Fatalf("❌ Database connection failed: %v", err)
 	}
 	defer db.Close()
 
-	// تست اتصال
 	if err := db.Ping(); err != nil {
 		log.Fatalf("❌ Database ping failed: %v", err)
 	}
 	log.Println("✅ Database connected")
 
-	// اجرای دستورات
 	switch command {
 	case "migrate":
-		// Use os.Args[2:] to get additional args after the command
-		// (flag.CommandLine.Args() may be empty if flags were not parsed)
 		handleMigrate(db, os.Args[2:])
 	case "seed":
 		handleSeed(db)

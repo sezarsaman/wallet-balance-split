@@ -128,7 +128,6 @@ func (r *Repository) Withdraw(userID int, amount int64, idempotencyKey string) e
 		return err
 	}
 
-	// ایجاد transaction با status pending - bank processing asynchronously
 	_, err = r.CreateTransaction(tx, userID, -amount, "withdraw", nil, idempotencyKey)
 	if err != nil {
 		tx.Rollback()
@@ -137,7 +136,6 @@ func (r *Repository) Withdraw(userID int, amount int64, idempotencyKey string) e
 	return tx.Commit()
 }
 
-// UpdateWithdrawalStatus تحدیث status یک withdrawal
 func (r *Repository) UpdateWithdrawalStatus(idempotencyKey string, status string) error {
 	query := `UPDATE transactions SET status = $1 WHERE idempotency_key = $2`
 	result, err := r.db.Exec(query, status, idempotencyKey)

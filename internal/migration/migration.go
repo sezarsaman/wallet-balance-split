@@ -6,17 +6,14 @@ import (
 	"log"
 )
 
-// Migrator مسئول اجرای مایگریشن‌ها است
 type Migrator struct {
 	db *sql.DB
 }
 
-// New یک نمونه جدید از Migrator می‌سازد
 func New(db *sql.DB) *Migrator {
 	return &Migrator{db: db}
 }
 
-// Up تمام مایگریشن‌ها را اجرا می‌کند
 func (m *Migrator) Up() error {
 	log.Println("🔄 Running migrations...")
 
@@ -74,7 +71,6 @@ func (m *Migrator) Up() error {
 	return nil
 }
 
-// Down تمام جداول را حذف می‌کند (خطرناک!)
 func (m *Migrator) Down() error {
 	log.Println("⚠️  WARNING: Dropping all tables...")
 

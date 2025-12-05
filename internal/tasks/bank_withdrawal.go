@@ -9,7 +9,6 @@ import (
 	"wallet-simulator/internal/repository"
 )
 
-// BankWithdrawalTask نمایندگی میکند یک async bank withdrawal
 type BankWithdrawalTask struct {
 	repo           *repository.Repository
 	userID         int
@@ -17,7 +16,6 @@ type BankWithdrawalTask struct {
 	idempotencyKey string
 }
 
-// NewBankWithdrawalTask ایجاد یک task جدید
 func NewBankWithdrawalTask(repo *repository.Repository, userID int, amount int64, idempotencyKey string) *BankWithdrawalTask {
 	return &BankWithdrawalTask{
 		repo:           repo,
@@ -27,7 +25,6 @@ func NewBankWithdrawalTask(repo *repository.Repository, userID int, amount int64
 	}
 }
 
-// Execute انجام دادن task
 func (t *BankWithdrawalTask) Execute(ctx context.Context) error {
 	return t.withdrawWithRetries(ctx, 3)
 }

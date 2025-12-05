@@ -29,7 +29,6 @@ type Metrics struct {
 	BalanceSnapshot prometheus.GaugeVec
 }
 
-// New creates and registers all metrics
 func New() *Metrics {
 	return &Metrics{
 		// HTTP endpoint metrics
