@@ -6,7 +6,7 @@
     "paths": {
         "/balance": {
             "get": {
-                "description": "دریافت موجودی کل و قابل برداشت کاربر",
+                "description": "Get Total and Withdrawable balance for a user",
                 "consumes": [
                     "application/json"
                 ],
@@ -16,24 +16,24 @@
                 "tags": [
                     "balance"
                 ],
-                "summary": "دریافت موجودی حساب",
+                "summary": "Get Account Balance",
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "شناسه کاربر",
+                        "description": "User ID",
                         "name": "user_id",
                         "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "موجودی حساب",
+                        "description": "Account Balance",
                         "schema": {
                             "$ref": "#/definitions/models.BalanceResponse"
                         }
                     },
                     "500": {
-                        "description": "خطای سرور",
+                        "description": "Server Error",
                         "schema": {
                             "$ref": "#/definitions/models.ErrorResponse"
                         }
@@ -43,7 +43,7 @@
         },
         "/charge": {
             "post": {
-                "description": "شارژ حساب کاربری با مبلغ مشخص",
+                "description": "Charge a user's account with a specified amount",
                 "consumes": [
                     "application/json"
                 ],
@@ -53,10 +53,10 @@
                 "tags": [
                     "charge"
                 ],
-                "summary": "شارژ کردن حساب",
+                "summary": "Charge Account",
                 "parameters": [
                     {
-                        "description": "درخواست شارژ",
+                        "description": "Charge Request",
                         "name": "request",
                         "in": "body",
                         "required": true,
@@ -67,19 +67,19 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "شارژ موفق",
+                        "description": "Charge Successful",
                         "schema": {
                             "$ref": "#/definitions/models.ChargeResponse"
                         }
                     },
                     "400": {
-                        "description": "درخواست نامعتبر",
+                        "description": "Invalid Request",
                         "schema": {
                             "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "خطای سرور",
+                        "description": "Server Error",
                         "schema": {
                             "$ref": "#/definitions/models.ErrorResponse"
                         }
@@ -89,7 +89,7 @@
         },
         "/health": {
             "get": {
-                "description": "بررسی سلامت سرویس و اتصال به دیتابیس",
+                "description": "Check service health and database connection",
                 "consumes": [
                     "application/json"
                 ],
@@ -99,16 +99,16 @@
                 "tags": [
                     "health"
                 ],
-                "summary": "بررسی وضعیت سرویس",
+                "summary": "Check Service Health",
                 "responses": {
                     "200": {
-                        "description": "سرویس سالم است",
+                        "description": "Service is healthy",
                         "schema": {
                             "$ref": "#/definitions/models.HealthResponse"
                         }
                     },
                     "500": {
-                        "description": "سرویس در وضعیت بد است",
+                        "description": "Service is unhealthy",
                         "schema": {
                             "$ref": "#/definitions/models.ErrorResponse"
                         }
@@ -118,7 +118,7 @@
         },
         "/transactions": {
             "get": {
-                "description": "دریافت لیست تمام تراکنش‌های یک کاربر",
+                "description": "Get the list of all transactions for a user",
                 "consumes": [
                     "application/json"
                 ],
@@ -128,18 +128,18 @@
                 "tags": [
                     "transactions"
                 ],
-                "summary": "دریافت تاریخچه تراکنش‌ها",
+                "summary": "Get Transaction History",
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "شناسه کاربر",
+                        "description": "User ID",
                         "name": "user_id",
                         "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "لیست تراکنش‌ها",
+                        "description": "Transaction List",
                         "schema": {
                             "type": "array",
                             "items": {
@@ -148,7 +148,7 @@
                         }
                     },
                     "500": {
-                        "description": "خطای سرور",
+                        "description": "Server Error",
                         "schema": {
                             "$ref": "#/definitions/models.ErrorResponse"
                         }
@@ -158,7 +158,7 @@
         },
         "/withdraw": {
             "post": {
-                "description": "درخواست برداشت مبلغ از حساب (درخواست معوق می‌شود)",
+                "description": "Request to withdraw amount from account (request is deferred)",
                 "consumes": [
                     "application/json"
                 ],
@@ -168,10 +168,10 @@
                 "tags": [
                     "withdraw"
                 ],
-                "summary": "درخواست برداشت",
+                "summary": "Withdraw Request",
                 "parameters": [
                     {
-                        "description": "درخواست برداشت",
+                        "description": "Withdraw Request",
                         "name": "request",
                         "in": "body",
                         "required": true,
@@ -182,19 +182,19 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "درخواست برداشت دریافت شد",
+                        "description": "Withdraw request received",
                         "schema": {
                             "$ref": "#/definitions/models.WithdrawResponse"
                         }
                     },
                     "400": {
-                        "description": "درخواست نامعتبر",
+                        "description": "Invalid Request",
                         "schema": {
                             "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "خطای سرور",
+                        "description": "Server Error",
                         "schema": {
                             "$ref": "#/definitions/models.ErrorResponse"
                         }

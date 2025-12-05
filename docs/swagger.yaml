@@ -84,9 +84,9 @@ paths:
     get:
       consumes:
       - application/json
-      description: دریافت موجودی کل و قابل برداشت کاربر
+      description: Get Total and Withdrawable balance for a user
       parameters:
-      - description: شناسه کاربر
+      - description: User ID
         in: query
         name: user_id
         type: integer
@@ -94,23 +94,23 @@ paths:
       - application/json
       responses:
         "200":
-          description: موجودی حساب
+          description: Account Balance
           schema:
             $ref: '#/definitions/models.BalanceResponse'
         "500":
-          description: خطای سرور
+          description: Server Error
           schema:
             $ref: '#/definitions/models.ErrorResponse'
-      summary: دریافت موجودی حساب
+      summary: Get Account Balance
       tags:
       - balance
   /charge:
     post:
       consumes:
       - application/json
-      description: شارژ حساب کاربری با مبلغ مشخص
+      description: Charge a user's account with a specified amount
       parameters:
-      - description: درخواست شارژ
+      - description: Charge Request
         in: body
         name: request
         required: true
@@ -120,46 +120,46 @@ paths:
       - application/json
       responses:
         "200":
-          description: شارژ موفق
+          description: Charge Successful
           schema:
             $ref: '#/definitions/models.ChargeResponse'
         "400":
-          description: درخواست نامعتبر
+          description: Invalid Request
           schema:
             $ref: '#/definitions/models.ErrorResponse'
         "500":
-          description: خطای سرور
+          description: Server Error
           schema:
             $ref: '#/definitions/models.ErrorResponse'
-      summary: شارژ کردن حساب
+      summary: Charge Account
       tags:
       - charge
   /health:
     get:
       consumes:
       - application/json
-      description: بررسی سلامت سرویس و اتصال به دیتابیس
+      description: Check service health and database connection
       produces:
       - application/json
       responses:
         "200":
-          description: سرویس سالم است
+          description: Service is healthy
           schema:
             $ref: '#/definitions/models.HealthResponse'
         "500":
-          description: سرویس در وضعیت بد است
+          description: Service is unhealthy
           schema:
             $ref: '#/definitions/models.ErrorResponse'
-      summary: بررسی وضعیت سرویس
+      summary: Check Service Health
       tags:
       - health
   /transactions:
     get:
       consumes:
       - application/json
-      description: دریافت لیست تمام تراکنش‌های یک کاربر
+      description: Get the list of all transactions for a user
       parameters:
-      - description: شناسه کاربر
+      - description: User ID
         in: query
         name: user_id
         type: integer
@@ -167,25 +167,25 @@ paths:
       - application/json
       responses:
         "200":
-          description: لیست تراکنش‌ها
+          description: Transaction List
           schema:
             items:
               $ref: '#/definitions/models.Transaction'
             type: array
         "500":
-          description: خطای سرور
+          description: Server Error
           schema:
             $ref: '#/definitions/models.ErrorResponse'
-      summary: دریافت تاریخچه تراکنش‌ها
+      summary: Get Transaction History
       tags:
       - transactions
   /withdraw:
     post:
       consumes:
       - application/json
-      description: درخواست برداشت مبلغ از حساب (درخواست معوق می‌شود)
+      description: Request to withdraw amount from account (request is deferred)
       parameters:
-      - description: درخواست برداشت
+      - description: Withdraw Request
         in: body
         name: request
         required: true
@@ -195,18 +195,18 @@ paths:
       - application/json
       responses:
         "200":
-          description: درخواست برداشت دریافت شد
+          description: Withdraw request received
           schema:
             $ref: '#/definitions/models.WithdrawResponse'
         "400":
-          description: درخواست نامعتبر
+          description: Invalid Request
           schema:
             $ref: '#/definitions/models.ErrorResponse'
         "500":
-          description: خطای سرور
+          description: Server Error
           schema:
             $ref: '#/definitions/models.ErrorResponse'
-      summary: درخواست برداشت
+      summary: Withdraw Request
       tags:
       - withdraw
 swagger: "2.0"
