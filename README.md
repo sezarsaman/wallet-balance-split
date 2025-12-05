@@ -49,6 +49,52 @@ make run
 
 The service will be available at `http://localhost:8080`.
 
+## 📁 Project Structure
+
+```
+wbs/
+├── cmd/
+│   ├── main.go              # HTTP API server entry point
+│   └── cli/
+│       └── main.go          # CLI tool for DB operations (migrate, seed, etc)
+├── internal/
+│   ├── config/              # Configuration management
+│   ├── handlers/            # HTTP request handlers
+│   ├── repository/          # Database layer (queries)
+│   ├── migration/           # Database schema migrations
+│   ├── seeder/              # Initial data seeding
+│   ├── worker/              # Worker pool for async tasks
+│   ├── tasks/               # Async task definitions
+│   ├── models/              # Data models
+│   └── metrics/             # Prometheus metrics
+├── docker-compose.yml       # Services (Postgres, Prometheus, Grafana, Swagger)
+├── migrations/              # SQL migration files
+├── Makefile                 # Build & lifecycle management
+└── README.md                # This file
+```
+
+## 🏗️ Architecture Details
+
+### Request Flow
+
+1. **HTTP Handler** (`/cmd/main.go`): Receives requests, validates input, returns responses
+2. **Repository Layer** (`/internal/repository`): Executes database queries with connection pooling
+3. **Worker Pool** (`/internal/worker`): Async task queue for long-running operations (withdrawals)
+4. **Database** (PostgreSQL): Persistent storage with indexed queries
+
+### Key Components
+
+- **Connection Pooling**: Uses `database/sql` with configurable pool size (default: 100 max connections)
+- **Worker Pool**: Fixed-size goroutine pool (50 workers) for concurrent withdrawal processing
+- **Idempotency**: `idempotency_key` prevents duplicate processing of same request
+- **Metrics**: Prometheus integration tracks requests, errors, and worker queue stats
+
+### Concurrency Model
+
+- **Charge** (Synchronous): Immediate database update, instant response
+- **Withdraw** (Asynchronous): HTTP returns immediately, worker processes in background
+- **Safe**: Uses transactions and idempotency keys for data consistency
+
 ## 📖 API Documentation
 
 You can explore the API in two ways:
