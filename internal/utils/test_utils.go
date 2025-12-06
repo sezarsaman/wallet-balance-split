@@ -26,7 +26,7 @@ func SetupTestDB() *repository.Repository {
 	if err := db.Ping(); err != nil {
 		panic(err)
 	}
-	db.Exec("DROP TABLE IF EXISTS transactions")
+	db.Exec("TRUNCATE transactions RESTART IDENTITY CASCADE")
 	db.Exec(`
 		CREATE TABLE IF NOT EXISTS transactions (
 			id SERIAL PRIMARY KEY,
