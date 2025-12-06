@@ -3,6 +3,11 @@
     "info": {
         "contact": {}
     },
+    "host": "localhost:8080",
+    "basePath": "/",
+    "schemes": [
+        "http"
+    ],
     "paths": {
         "/balance": {
             "get": {

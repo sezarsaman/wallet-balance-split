@@ -43,7 +43,8 @@ services:
       - ./docs:/swagger:ro
     environment:
       SWAGGER_JSON: /swagger/swagger.json
-
+    networks:
+    - wbs_network
 
   prometheus:
     image: prom/prometheus:latest

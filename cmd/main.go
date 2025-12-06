@@ -10,7 +10,6 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
-	"wallet-simulator/docs"
 	"wallet-simulator/internal/config"
 	"wallet-simulator/internal/handlers"
 	"wallet-simulator/internal/metrics"
@@ -23,14 +22,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-// Swagger info
-var swaggerInfo = docs.SwaggerInfo
-
 func main() {
-	// Initialize swagger
-	swaggerInfo.Host = "localhost:8080"
-	swaggerInfo.BasePath = "/"
-
 	// ✅ Load configuration from .env
 	cfg := config.Load()
 	log.Println(cfg.String())
