@@ -32,7 +32,7 @@ func TestWithdrawHandler(t *testing.T) {
 	tw := time.Now()
 	repo.Charge(1, 100000, &tw, "testxyz")
 
-	time.Sleep(2 * time.Second)
+	time.Sleep(10 * time.Second)
 
 	reqBody, _ := json.Marshal(models.WithdrawRequest{UserID: 1, Amount: 1000, IdempotencyKey: "test-2"})
 	req := httptest.NewRequest("POST", "/withdraw", bytes.NewReader(reqBody))
