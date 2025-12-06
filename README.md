@@ -54,19 +54,27 @@ The service will be available at `http://localhost:8080`.
 ```
 wbs/
 ├── cmd/
-│   └── main.go              # HTTP API server entry point
+│   └── main.go                             # HTTP API server entry point
+├── db/
+│   ├── migration
+│   │   └── 001_init.sql                    # Migrate to initialize DB
+│   └── seed
+│       └── 001_transaction_seeder.sql      # Seed to initialize DB
+├── docs/
+│   ├── swagger.json                        # Swagger documentation of APIs in JSON Format
+│   └── swagger.yml                         # Swagger documentation of APIs in YML Format
 ├── internal/
-│   ├── config/              # Configuration management
-│   ├── handlers/            # HTTP request handlers + test
-│   ├── repository/          # Database layer (queries) + test
-│   ├── worker/              # Worker pool for async tasks
-│   ├── tasks/               # Async task definitions
-│   ├── models/              # Data models
-│   └── metrics/             # Prometheus metrics
-├── docker-compose.yml       # Services (Postgres, Prometheus, Grafana, Swagger)
-├── migrations/              # SQL migration files
-├── Makefile                 # Build & lifecycle management
-└── README.md                # This file
+│   ├── config/                             # Configuration management
+│   ├── handlers/                           # HTTP request handlers + test
+│   ├── repository/                         # Database layer (queries) + test
+│   ├── worker/                             # Worker pool for async tasks
+│   ├── tasks/                              # Async task definitions
+│   ├── models/                             # Data models
+│   └── metrics/                            # Prometheus metrics
+├── docker-compose.yml                      # Services (App, Postgres, Prometheus, Grafana, Swagger)
+├── migrations/                             # SQL migration files
+├── Makefile                                # Build & lifecycle management
+└── README.md                               # This file
 ```
 
 ## 🏗️ Architecture Details
