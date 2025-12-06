@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"log"
@@ -102,11 +103,19 @@ func (r *Repository) Charge(userID int, amount int64, releaseAt *time.Time, idem
 	return tx.Commit()
 }
 
-func (r *Repository) Withdraw(userID int, amount int64, idempotencyKey string) error {
-	tx, err := r.db.Begin()
+func (r *Repository) Withdraw(ctx context.Context, userID int, amount int64, idempotencyKey string) error {
+
+	opts := &sql.TxOptions{
+		Isolation: sql.LevelSerializable,
+		ReadOnly:  false,
+	}
+
+	tx, err := r.db.BeginTx(ctx, opts)
 	if err != nil {
 		return err
 	}
+
+	defer tx.Rollback()
 
 	withdrawable, err := r.GetWithdrawableBalance(userID)
 	if err != nil {

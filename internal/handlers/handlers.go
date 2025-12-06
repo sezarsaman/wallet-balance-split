@@ -130,13 +130,14 @@ func WithdrawHandler(cfg *HandlerConfig) http.HandlerFunc {
 			return
 		}
 
-		err := cfg.Repo.Withdraw(req.UserID, req.Amount, req.IdempotencyKey)
+		err := cfg.Repo.Withdraw(r.Context(), req.UserID, req.Amount, req.IdempotencyKey)
 		if err != nil {
-			if err == models.ErrDuplicateRequest {
+			switch err {
+			case models.ErrDuplicateRequest:
 				http.Error(w, err.Error(), http.StatusConflict)
-			} else if err == models.ErrInsufficientBalance {
+			case models.ErrInsufficientBalance:
 				http.Error(w, err.Error(), http.StatusBadRequest)
-			} else {
+			default:
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 			}
 			return

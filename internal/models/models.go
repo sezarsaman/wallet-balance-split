@@ -74,4 +74,5 @@ var (
 	ErrInvalidAmount         = errors.New("invalid amount")
 	ErrMissingIdempotencyKey = errors.New("missing idempotency_key")
 	ErrUserNotFound          = errors.New("user not found")
+	ErrAmountMustBePositive  = errors.New("amount must be positive")
 )

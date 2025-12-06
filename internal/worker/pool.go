@@ -17,6 +17,8 @@ type WorkerPool struct {
 	wg        sync.WaitGroup
 	ctx       context.Context
 	cancel    context.CancelFunc
+
+	done chan struct{}
 }
 
 func NewWorkerPool(workers int) *WorkerPool {
@@ -26,6 +28,7 @@ func NewWorkerPool(workers int) *WorkerPool {
 		taskQueue: make(chan Task, workers*2),
 		ctx:       ctx,
 		cancel:    cancel,
+		done:      make(chan struct{}, workers*2),
 	}
 
 	for i := 0; i < workers; i++ {
@@ -55,7 +58,19 @@ func (p *WorkerPool) worker(id int) {
 				log.Printf("⚠️ Worker %d: Task execution failed: %v", id, err)
 			}
 			cancel()
+
+			// NEW: signal task completed
+			select {
+			case p.done <- struct{}{}:
+			default:
+			}
 		}
+	}
+}
+
+func (p *WorkerPool) Wait(n int) {
+	for i := 0; i < n; i++ {
+		<-p.done
 	}
 }
 

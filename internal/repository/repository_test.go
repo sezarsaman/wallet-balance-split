@@ -1,49 +1,17 @@
-package tests
+package repository_test
 
 import (
-	"database/sql"
-	"os"
 	"testing"
 	"time"
-	"wallet-simulator/internal/repository"
+	"wallet-simulator/internal/utils"
 
-	"testing/synctest" // New in 1.25 for concurrent testing
+	"testing/synctest"
 
 	_ "github.com/lib/pq"
 )
 
-func setupTestDB() *repository.Repository {
-	// Allow overriding test DB URL via TEST_DATABASE_URL env var.
-	// Default matches docker-compose postgres credentials and port mapping.
-	dsn := os.Getenv("TEST_DATABASE_URL")
-	if dsn == "" {
-		dsn = "postgres://postgres:password@localhost:5433/wallet?sslmode=disable"
-	}
-	db, err := sql.Open("postgres", dsn)
-	if err != nil {
-		panic(err)
-	}
-	if err := db.Ping(); err != nil {
-		panic(err)
-	}
-	db.Exec("DROP TABLE IF EXISTS transactions")
-	db.Exec(`
-		CREATE TABLE IF NOT EXISTS transactions (
-			id SERIAL PRIMARY KEY,
-			user_id INTEGER NOT NULL,
-			amount BIGINT NOT NULL,
-			type VARCHAR(10) NOT NULL,
-			status VARCHAR(20) NOT NULL,
-			created_at TIMESTAMP NOT NULL,
-			release_at TIMESTAMP,
-			idempotency_key VARCHAR(255) UNIQUE
-		)
-	`)
-	return repository.NewRepository(db)
-}
-
 func TestChargeAndBalance(t *testing.T) {
-	repo := setupTestDB()
+	repo := utils.SetupTestDB()
 
 	now := time.Now()
 	future := now.Add(24 * time.Hour)
@@ -69,15 +37,15 @@ func TestChargeAndBalance(t *testing.T) {
 }
 
 func TestWithdrawConcurrent(t *testing.T) {
-	repo := setupTestDB()
+	repo := utils.SetupTestDB()
 	if err := repo.Charge(1, 2000, nil, "key1"); err != nil {
 		t.Fatalf("Charge error: %v", err)
 	}
 
 	// Use synctest for deterministic concurrent withdraw
 	synctest.Test(t, func(t *testing.T) {
-		repo.Withdraw(1, int64(1000), "key3")
-		repo.Withdraw(1, int64(500), "key4")
+		repo.Withdraw(t.Context(), 1, int64(1000), "key3")
+		repo.Withdraw(t.Context(), 1, int64(500), "key4")
 	})
 
 	// Simulate background worker completing the withdrawals
