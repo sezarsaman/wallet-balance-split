@@ -40,10 +40,10 @@ Worker Pool (50 workers)
 ## 🚀 Quick Start
 
 ```bash
-# Initialize services and build
+# Initialize and Build and Run the services
 make init
 
-# Run the service
+# Run the services
 make run
 ```
 
@@ -54,15 +54,11 @@ The service will be available at `http://localhost:8080`.
 ```
 wbs/
 ├── cmd/
-│   ├── main.go              # HTTP API server entry point
-│   └── cli/
-│       └── main.go          # CLI tool for DB operations (migrate, seed, etc)
+│   └── main.go              # HTTP API server entry point
 ├── internal/
 │   ├── config/              # Configuration management
-│   ├── handlers/            # HTTP request handlers
-│   ├── repository/          # Database layer (queries)
-│   ├── migration/           # Database schema migrations
-│   ├── seeder/              # Initial data seeding
+│   ├── handlers/            # HTTP request handlers + test
+│   ├── repository/          # Database layer (queries) + test
 │   ├── worker/              # Worker pool for async tasks
 │   ├── tasks/               # Async task definitions
 │   ├── models/              # Data models
@@ -100,7 +96,7 @@ wbs/
 You can explore the API in two ways:
 
 ### 1. Swagger UI (Interactive)
-Visit `http://localhost:8080/swagger` in your browser to see and test all endpoints interactively.
+Visit `http://localhost:8282/` in your browser to see and test all endpoints interactively.
 
 ### 2. REST Endpoints
 
@@ -145,18 +141,17 @@ curl http://localhost:8080/transactions/123
 
 - **Refresh database**: `make refresh_db`
 - **Stop services**: `make stop`
-- **View logs**: `make logs`
-- **Show status**: `make status`
-- **Full cleanup**: `make clean_all`
-- **Help**: `make help`
+- **Full cleanup**: `make reset`
+- **Test**: `make test`
+- **Test Coverage**: `make test-coverage`
 
 ## 🗄️ Database
 
 Default credentials (docker-compose):
 - User: `postgres`
 - Password: `password`
-- Database: `wallet`
-- Port: `5433`
+- Database: `wpdb`
+- Port: `5432`
 
 ## 📝 Notes
 
