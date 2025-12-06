@@ -44,7 +44,7 @@ func SetupTestDB() *repository.Repository {
 
 func SetupRouter(repo *repository.Repository) chi.Router {
 	r := chi.NewRouter()
-	pool := worker.NewWorkerPool(10)
+	pool := worker.NewWorkerPool(1)
 	handlers.SetupRoutes(r, repo, pool)
 	return r
 }
