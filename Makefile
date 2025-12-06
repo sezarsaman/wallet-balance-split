@@ -6,17 +6,36 @@ export $(shell sed 's/=.*//' .env.example)
 init:
 	$(MAKE) set-env
 	$(MAKE) build
-	$(MAKE) run
+	$(MAKE) run-db
 	sleep 5
 	$(MAKE) refresh-db
-	$(MAKE) build-swagger
-
+	sleep 5
+	$(MAKE) run-app
+	$(MAKE) run-swagger
+	$(MAKE) run-prometheus
+	$(MAKE) run-grafana
+	
 
 build:	
 	docker compose build
 
+run-db:
+	docker compose up -d postgres
+
+run-swagger:
+	docker compose up -d swagger-ui
+
+run-prometheus:
+	docker compose up -d prometheus
+
+run-grafana:
+	docker compose up -d grafana
+
+run-app:
+	docker compose up -d app
+
 run:
-	docker compose up -d  --remove-orphans
+	docker compose up -d
 
 stop:
 	docker compose down
@@ -39,10 +58,5 @@ test-coverage:
 set-env:
 	@if [ ! -f .env ]; then cp .env.example .env; else echo ".env already exists"; fi
 
-build-swagger:
-	docker run --rm -v $(PWD)/docs:/local openapitools/openapi-generator-cli generate \
-	-i /local/swagger.yaml \
-	-g openapi \
-	-o /local
 
 

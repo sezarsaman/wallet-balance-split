@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -35,11 +36,10 @@ func main() {
 	log.Println(cfg.String())
 
 	// ✅ Connect to database using config
-	db, err := sql.Open("postgres", cfg.GetDSN())
+	db, err := ConnectWithRetry(cfg.GetDSN())
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("[DB] failed:", err)
 	}
-	defer db.Close()
 
 	// ✅ Connection Pooling Configuration
 	db.SetMaxOpenConns(cfg.DB.MaxOpenConns)
@@ -148,4 +148,35 @@ func main() {
 	}
 
 	log.Println("✅ Server stopped")
+}
+
+func ConnectWithRetry(dsn string) (*sql.DB, error) {
+	maxRetries := 30
+	baseDelay := time.Second // 1s
+
+	var db *sql.DB
+	var err error
+
+	for i := 1; i <= maxRetries; i++ {
+		db, err = sql.Open("postgres", dsn)
+		if err != nil {
+			log.Printf("[DB] attempt %d/%d failed: %v", i, maxRetries, err)
+		} else {
+			// test real connectivity
+			pingErr := db.Ping()
+			if pingErr == nil {
+				log.Println("[DB] successfully connected.")
+				return db, nil
+			}
+			err = pingErr
+			log.Printf("[DB] attempt %d/%d failed (ping): %v", i, maxRetries, err)
+		}
+
+		// exponential backoff
+		sleep := baseDelay * time.Duration(i)
+		log.Printf("[DB] retrying in %v...", sleep)
+		time.Sleep(sleep)
+	}
+
+	return nil, fmt.Errorf("could not connect to DB after %d attempts: %w", maxRetries, err)
 }

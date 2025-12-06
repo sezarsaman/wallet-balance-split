@@ -1,7 +1,7 @@
 
 services:
 
-  wbs_app:
+  app:
     build:
       context: .
       dockerfile: Dockerfile
@@ -11,7 +11,8 @@ services:
     ports:
       - "8080:8080"
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     networks:
       - wbs_network
   postgres:
@@ -22,14 +23,16 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
     ports:
-      - "5433:5432"
+      - "5432:5432" 
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d wallet"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d wbs_db"]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - wbs_network
 
   swagger-ui:
     image: swaggerapi/swagger-ui
@@ -37,9 +40,10 @@ services:
     ports:
       - "8282:8080"
     volumes:
-      - ./docs:/usr/share/nginx/html:ro
+      - ./docs:/swagger:ro
     environment:
-      SWAGGER_JSON: /usr/share/nginx/html/swagger.json 
+      SWAGGER_JSON: /swagger/swagger.json
+
 
   prometheus:
     image: prom/prometheus:latest
@@ -55,7 +59,7 @@ services:
       - "9090:9090"
     depends_on:
       - postgres
-      - wbs_app
+      - app
     networks:
       - wbs_network
 
