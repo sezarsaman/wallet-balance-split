@@ -13,7 +13,6 @@ import (
 	"wallet-simulator/internal/config"
 	"wallet-simulator/internal/handlers"
 	"wallet-simulator/internal/metrics"
-	"wallet-simulator/internal/migration"
 	"wallet-simulator/internal/repository"
 	"wallet-simulator/internal/worker"
 
@@ -51,12 +50,6 @@ func main() {
 		log.Fatalf("Database connection failed: %v", err)
 	}
 	log.Println("✅ Database connected with connection pooling")
-
-	// ✅ Run migrations
-	migrator := migration.New(db)
-	if err := migrator.Up(); err != nil {
-		log.Fatalf("Migration failed: %v", err)
-	}
 
 	repo := repository.NewRepository(db)
 

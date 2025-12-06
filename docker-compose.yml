@@ -1,8 +1,22 @@
 
 services:
+
+  wbs_app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: wbs_app
+    env_file:
+      - .env
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+    networks:
+      - wbs_network
   postgres:
     image: postgres:15-alpine
-    container_name: wallet_postgres_v2
+    container_name: wbs_postgres
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
@@ -17,9 +31,19 @@ services:
       timeout: 5s
       retries: 5
 
+  swagger-ui:
+    image: swaggerapi/swagger-ui
+    container_name: wbs_swagger_ui
+    ports:
+      - "8282:8080"
+    volumes:
+      - ./docs:/usr/share/nginx/html:ro
+    environment:
+      SWAGGER_JSON: /usr/share/nginx/html/swagger.json 
+
   prometheus:
     image: prom/prometheus:latest
-    container_name: wallet_prometheus
+    container_name: wbs_prometheus
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus_data:/prometheus
@@ -31,12 +55,13 @@ services:
       - "9090:9090"
     depends_on:
       - postgres
+      - wbs_app
     networks:
-      - wallet_network
+      - wbs_network
 
   grafana:
     image: grafana/grafana:latest
-    container_name: wallet_grafana
+    container_name: wbs_grafana
     environment:
       GF_SECURITY_ADMIN_PASSWORD: admin
       GF_USERS_ALLOW_SIGN_UP: 'false'
@@ -47,20 +72,7 @@ services:
     depends_on:
       - prometheus
     networks:
-      - wallet_network
-
-  swagger-ui:
-    image: swaggerapi/swagger-ui:latest
-    container_name: wallet_swagger_ui
-    environment:
-      SWAGGER_JSON: /swagger.json
-    ports:
-      - "8081:8080"
-    volumes:
-      - ./docs/swagger.json:/swagger.json:ro
-      - ./docs/index.html:/usr/share/nginx/html/index.html:ro
-    networks:
-      - wallet_network
+      - wbs_network
 
 volumes:
   postgres_data:
@@ -68,6 +80,6 @@ volumes:
   grafana_data:
 
 networks:
-  wallet_network:
+  wbs_network:
     driver: bridge
 

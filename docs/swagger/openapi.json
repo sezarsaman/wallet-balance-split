@@ -1,0 +1,349 @@
+{
+  "openapi" : "3.0.1",
+  "info" : {
+    "contact" : { }
+  },
+  "servers" : [ {
+    "url" : "/"
+  } ],
+  "paths" : {
+    "/balance" : {
+      "get" : {
+        "tags" : [ "balance" ],
+        "summary" : "Get Account Balance",
+        "description" : "Get Total and Withdrawable balance for a user",
+        "parameters" : [ {
+          "name" : "user_id",
+          "in" : "query",
+          "description" : "User ID",
+          "required" : false,
+          "style" : "form",
+          "explode" : true,
+          "schema" : {
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Account Balance",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/models.BalanceResponse"
+                }
+              }
+            }
+          },
+          "500" : {
+            "description" : "Server Error",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/models.ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/charge" : {
+      "post" : {
+        "tags" : [ "charge" ],
+        "summary" : "Charge Account",
+        "description" : "Charge a user's account with a specified amount",
+        "requestBody" : {
+          "description" : "Charge Request",
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/models.ChargeRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Charge Successful",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/models.ChargeResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Invalid Request",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/models.ErrorResponse"
+                }
+              }
+            }
+          },
+          "500" : {
+            "description" : "Server Error",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/models.ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-codegen-request-body-name" : "request"
+      }
+    },
+    "/health" : {
+      "get" : {
+        "tags" : [ "health" ],
+        "summary" : "Check Service Health",
+        "description" : "Check service health and database connection",
+        "responses" : {
+          "200" : {
+            "description" : "Service is healthy",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/models.HealthResponse"
+                }
+              }
+            }
+          },
+          "500" : {
+            "description" : "Service is unhealthy",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/models.ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/transactions" : {
+      "get" : {
+        "tags" : [ "transactions" ],
+        "summary" : "Get Transaction History",
+        "description" : "Get the list of all transactions for a user",
+        "parameters" : [ {
+          "name" : "user_id",
+          "in" : "query",
+          "description" : "User ID",
+          "required" : false,
+          "style" : "form",
+          "explode" : true,
+          "schema" : {
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Transaction List",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/models.Transaction"
+                  }
+                }
+              }
+            }
+          },
+          "500" : {
+            "description" : "Server Error",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/models.ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/withdraw" : {
+      "post" : {
+        "tags" : [ "withdraw" ],
+        "summary" : "Withdraw Request",
+        "description" : "Request to withdraw amount from account (request is deferred)",
+        "requestBody" : {
+          "description" : "Withdraw Request",
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/models.WithdrawRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Withdraw request received",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/models.WithdrawResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Invalid Request",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/models.ErrorResponse"
+                }
+              }
+            }
+          },
+          "500" : {
+            "description" : "Server Error",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/models.ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-codegen-request-body-name" : "request"
+      }
+    }
+  },
+  "components" : {
+    "schemas" : {
+      "models.BalanceResponse" : {
+        "type" : "object",
+        "properties" : {
+          "total" : {
+            "type" : "integer"
+          },
+          "withdrawable" : {
+            "type" : "integer"
+          }
+        }
+      },
+      "models.ChargeRequest" : {
+        "type" : "object",
+        "properties" : {
+          "amount" : {
+            "type" : "integer"
+          },
+          "idempotency_key" : {
+            "type" : "string"
+          },
+          "release_at" : {
+            "type" : "string"
+          },
+          "user_id" : {
+            "type" : "integer"
+          }
+        }
+      },
+      "models.ChargeResponse" : {
+        "type" : "object",
+        "properties" : {
+          "idempotency_key" : {
+            "type" : "string"
+          },
+          "message" : {
+            "type" : "string"
+          }
+        }
+      },
+      "models.ErrorResponse" : {
+        "type" : "object",
+        "properties" : {
+          "error" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "integer"
+          }
+        }
+      },
+      "models.HealthResponse" : {
+        "type" : "object",
+        "properties" : {
+          "message" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          }
+        }
+      },
+      "models.Transaction" : {
+        "type" : "object",
+        "properties" : {
+          "amount" : {
+            "type" : "integer",
+            "description" : "positive for charge, negative for withdraw"
+          },
+          "created_at" : {
+            "type" : "string"
+          },
+          "id" : {
+            "type" : "integer"
+          },
+          "release_at" : {
+            "type" : "string",
+            "description" : "optional for charge"
+          },
+          "status" : {
+            "type" : "string",
+            "description" : "\"pending\", \"completed\", \"failed\""
+          },
+          "type" : {
+            "type" : "string",
+            "description" : "\"charge\" or \"withdraw\""
+          },
+          "user_id" : {
+            "type" : "integer"
+          }
+        }
+      },
+      "models.WithdrawRequest" : {
+        "type" : "object",
+        "properties" : {
+          "amount" : {
+            "type" : "integer"
+          },
+          "idempotency_key" : {
+            "type" : "string"
+          },
+          "user_id" : {
+            "type" : "integer"
+          }
+        }
+      },
+      "models.WithdrawResponse" : {
+        "type" : "object",
+        "properties" : {
+          "idempotency_key" : {
+            "type" : "string"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          }
+        }
+      }
+    }
+  },
+  "x-original-swagger-version" : "2.0"
+}

@@ -1,261 +1,48 @@
-.PHONY: help setup build run migrate seed refresh clear clean test docker-up docker-down docker-logs stop
+include .env.example
+export $(shell sed 's/=.*//' .env.example)
 
-COLOR_RESET=\033[0m
-COLOR_BLUE=\033[34m
-COLOR_GREEN=\033[32m
-COLOR_YELLOW=\033[33m
+.PHONY: init run stop refresh-db reset test test-coverage set-env
 
-help:
-	@echo "$(COLOR_BLUE)╔═════════════════════════════════════════════════════════════╗$(COLOR_RESET)"
-	@echo "$(COLOR_BLUE)║   Wallet Service - Makefile Commands                       ║$(COLOR_RESET)"
-	@echo "$(COLOR_BLUE)╚═════════════════════════════════════════════════════════════╝$(COLOR_RESET)"
-	@echo ""
-	@echo "$(COLOR_GREEN)Project Setup:$(COLOR_RESET)"
-	@echo "  make init            → 🚀 COMPLETE INITIALIZATION (from zero, includes everything)"
-	@echo "  make setup           → Initialize project (.env, docker, everything)"
-	@echo "  make deps            → Download Go dependencies"
-	@echo ""
-	@echo "$(COLOR_GREEN)Build:$(COLOR_RESET)"
-	@echo "  make build           → Build application binary"
-	@echo "  make docker-build    → Build Docker image"
-	@echo ""
-	@echo "$(COLOR_GREEN)Database:$(COLOR_RESET)"
-	@echo "  make db-up           → Start PostgreSQL (docker)"
-	@echo "  make db-down         → Stop PostgreSQL (docker)"
-	@echo "  make migrate         → Run all database migrations"
-	@echo "  make migrate-down    → Rollback all migrations (DROP tables)"
-	@echo "  make seed            → Insert test data"
-	@echo "  make refresh         → Reset DB (migrate down/up + seed)"
-	@echo "  make clear-seed      → Remove test data only"
-	@echo ""
-	@echo "$(COLOR_GREEN)Running:$(COLOR_RESET)"
-	@echo "  make run             → Run application (requires DB to be ready)"
-	@echo "  make dev             → Run with auto-reload (requires air)"
-	@echo ""
-	@echo "$(COLOR_GREEN)API Documentation:$(COLOR_RESET)"
-	@echo "  📚 Swagger UI        → http://localhost:8081"
-	@echo "  📚 API Spec JSON     → http://localhost:8080/swagger.json"
-	@echo ""
-	@echo "$(COLOR_GREEN)Monitoring:$(COLOR_RESET)"
-	@echo "  make db-up           → Starts Prometheus (9090) and Grafana (3000)"
-	@echo "  📊 Prometheus        → http://localhost:9090"
-	@echo "  📈 Grafana           → http://localhost:3000 (user: admin, pass: admin)"
-	@echo "  🔍 App Metrics       → http://localhost:8080/metrics"
-	@echo ""
-	@echo "$(COLOR_GREEN)Testing:$(COLOR_RESET)"
-	@echo "  make test            → Run tests"
-	@echo "  make test-coverage   → Run tests with coverage report"
-	@echo ""
-	@echo "$(COLOR_GREEN)Cleanup & Utilities:$(COLOR_RESET)"
-	@echo "  make clean           → Remove binaries and build artifacts"
-	@echo "  make clean-all       → Full cleanup (delete Docker, volumes, binaries, ready for init)"
-	@echo "  make docker-clean    → Remove Docker containers and volumes only"
-	@echo "  make stop            → Stop all running services"
-	@echo "  make logs            → Show docker logs"
-	@echo "  make status          → Show docker containers status"
-	@echo ""
-
-# ==================== Setup ====================
-
-# 🚀 COMPLETE PROJECT INITIALIZATION (FROM ZERO)
-# This target does everything: cleans environment, builds, and starts the project
-init: clean-all .env docker-clean db-up deps migrate seed build docker-build
-	@echo ""
-	@echo "$(COLOR_GREEN)╔═══════════════════════════════════════════════════════════╗$(COLOR_RESET)"
-	@echo "$(COLOR_GREEN)║                                                           ║$(COLOR_RESET)"
-	@echo "$(COLOR_GREEN)║   ✅ PROJECT FULLY INITIALIZED AND READY!                ║$(COLOR_RESET)"
-	@echo "$(COLOR_GREEN)║                                                           ║$(COLOR_RESET)"
-	@echo "$(COLOR_GREEN)╚═══════════════════════════════════════════════════════════╝$(COLOR_RESET)"
-	@echo ""
-	@echo "$(COLOR_GREEN)📊 System Status:$(COLOR_RESET)"
-	@echo "   ✓ Code compiled (./bin/wallet)"
-	@echo "   ✓ Docker image built (wallet-service:latest)"
-	@echo "   ✓ All containers running (PostgreSQL, Prometheus, Grafana, Swagger UI)"
-	@echo "   ✓ Database migrations applied (6 migrations)"
-	@echo "   ✓ Test data seeded (11 records)"
-	@echo ""
-	@echo "$(COLOR_GREEN)🌐 Access Points:$(COLOR_RESET)"
-	@echo "   🔵 API Server:     http://localhost:8080"
-	@echo "   🟣 Swagger UI:     http://localhost:8081"
-	@echo "   🟡 Prometheus:     http://localhost:9090"
-	@echo "   🟢 Grafana:        http://localhost:3000 (admin/admin)"
-	@echo "   🔴 PostgreSQL:     localhost:5433"
-	@echo ""
-	@echo "$(COLOR_YELLOW)🚀 Next: make run$(COLOR_RESET)"
-	@echo ""
-
-# Standard setup (doesn't clean everything, just initializes from current state)
-setup: .env db-up deps migrate seed build
-	@echo "$(COLOR_GREEN)✅ Project setup completed!$(COLOR_RESET)"
-	@echo "$(COLOR_YELLOW)Next step: make run$(COLOR_RESET)"
-
-.env:
-	@echo "$(COLOR_YELLOW)📝 Creating .env from .env.example...$(COLOR_RESET)"
-	@if [ ! -f .env ]; then cp .env.example .env; echo "$(COLOR_GREEN)✅ .env created$(COLOR_RESET)"; else echo "$(COLOR_YELLOW)⚠️  .env already exists$(COLOR_RESET)"; fi
-
-deps:
-	@echo "$(COLOR_YELLOW)📦 Downloading dependencies...$(COLOR_RESET)"
-	@go mod download
-	@go mod tidy
-	@echo "$(COLOR_GREEN)✅ Dependencies ready$(COLOR_RESET)"
-
-# ==================== Build ====================
-build: bin/wallet
-	@echo "$(COLOR_GREEN)✅ Build completed$(COLOR_RESET)"
-
-bin/wallet:
-	@echo "$(COLOR_YELLOW)🔨 Generating Swagger docs...$(COLOR_RESET)"
-	@which swag > /dev/null || (echo "Installing swag..." && go install github.com/swaggo/swag/cmd/swag@latest)
-	@swag init -g cmd/main.go --parseInternal || true
-	@echo "$(COLOR_YELLOW)🔨 Building application...$(COLOR_RESET)"
-	@mkdir -p bin
-	@go build -o bin/wallet ./cmd/main.go
-	@echo "$(COLOR_GREEN)✅ Binary created: bin/wallet$(COLOR_RESET)"
-
-docker-build:
-	@echo "$(COLOR_YELLOW)🐳 Building Docker image...$(COLOR_RESET)"
-	@docker build -t wallet-service:latest .
-	@echo "$(COLOR_GREEN)✅ Docker image built$(COLOR_RESET)"
-
-# ==================== Database ====================
-db-up:
-	@echo "$(COLOR_YELLOW)🐳 Starting all Docker services (PostgreSQL, Prometheus, Grafana, Swagger UI)...$(COLOR_RESET)"
-	@docker compose up -d
-	@echo "$(COLOR_YELLOW)⏳ Waiting for database to be ready...$(COLOR_RESET)"
-	@sleep 3
-	@echo "$(COLOR_GREEN)✅ All services started:$(COLOR_RESET)"
-	@echo "   ✓ PostgreSQL (5433)"
-	@echo "   ✓ Prometheus (9090)"
-	@echo "   ✓ Grafana (3000)"
-	@echo "   ✓ Swagger UI (8081)"
-
-db-down:
-	@echo "$(COLOR_YELLOW)🛑 Stopping database services...$(COLOR_RESET)"
-	@docker compose down
-	@echo "$(COLOR_GREEN)✅ Database services stopped$(COLOR_RESET)"
-
-db-logs:
-	@docker compose logs -f
-
-db-clean:
-	@echo "$(COLOR_YELLOW)🗑️  Removing database volumes...$(COLOR_RESET)"
-	@docker compose down -v
-	@echo "$(COLOR_GREEN)✅ Database volumes removed$(COLOR_RESET)"
-
-# ==================== Migration & Seeding ====================
-migrate:
-	@echo "$(COLOR_YELLOW)🔄 Running migrations...$(COLOR_RESET)"
-	@go run cmd/cli/main.go migrate
-
-migrate-down:
-	@echo "$(COLOR_YELLOW)⚠️  WARNING: Dropping all tables...$(COLOR_RESET)"
-	@go run cmd/cli/main.go migrate down
-
-seed:
-	@echo "$(COLOR_YELLOW)🌱 Seeding database...$(COLOR_RESET)"
-	@go run cmd/cli/main.go seed
-
-refresh: migrate-down migrate seed
-	@echo "$(COLOR_GREEN)✅ Database refresh completed$(COLOR_RESET)"
-
-clear-seed:
-	@echo "$(COLOR_YELLOW)🗑️  Removing seed data...$(COLOR_RESET)"
-	@go run cmd/cli/main.go clear
-
-# ==================== Running ====================
-
-run: bin/wallet
-	@echo "$(COLOR_YELLOW)🚀 Starting application (ensures DB is up)...$(COLOR_RESET)"
-	@echo "Starting database services (if not running)..."
-	@$(MAKE) db-up >/dev/null 2>&1 || true
-	@# read DB port from .env fallback to 5433
-	@PORT=$$(grep -E '^DB_PORT=' .env 2>/dev/null | cut -d'=' -f2 || echo 5433); \
-		echo "Waiting for Postgres on localhost:$$PORT..."; \
-		counter=0; \
-		until ss -ltn | grep -q ":$$PORT"; do \
-			if [ $$counter -ge 60 ]; then echo "Timed out waiting for Postgres"; exit 1; fi; \
-			sleep 1; counter=$$((counter+1)); \
-		done; \
-		echo "Postgres appears to be listening on port $$PORT"; \
-		echo "Checking if port 8080 is free..."; \
-		lsof -iTCP:8080 -sTCP:LISTEN -t 2>/dev/null | xargs -r kill -9 2>/dev/null || true; \
-		sleep 1; \
-		echo "Launching app..."; \
-		./bin/wallet
-
-dev:
-	@echo "$(COLOR_YELLOW)🔄 Running with auto-reload (requires air)...$(COLOR_RESET)"
-	@which air > /dev/null || (echo "Installing air..." && go install github.com/cosmtrek/air@latest)
-	@air
+init:
+	$(MAKE) set-env
+	$(MAKE) build
+	$(MAKE) run
+	sleep 5
+	$(MAKE) refresh-db
+	$(MAKE) build-swagger
 
 
+build:	
+	docker compose build
 
-# ==================== Testing ====================
+run:
+	docker compose up -d  --remove-orphans
+
+stop:
+	docker compose down
+
+refresh-db:
+	docker compose exec -T postgres psql -U postgres -c "DROP DATABASE IF EXISTS $(DB_NAME);"
+	docker compose exec -T postgres psql -U postgres -c "CREATE DATABASE $(DB_NAME);"
+	docker compose exec -T postgres psql -U postgres $(DB_NAME) < db/migrations/001_init.sql
+	docker compose exec -T postgres psql -U postgres $(DB_NAME) < db/seed/001_transaction_seeder.sql
+
+reset:
+	docker compose down -v
+
 test:
-	@echo "$(COLOR_YELLOW)🧪 Running tests...$(COLOR_RESET)"
-	@go test -v ./...
+	go test ./...
 
 test-coverage:
-	@echo "$(COLOR_YELLOW)📊 Running tests with coverage...$(COLOR_RESET)"
-	@go test -v -coverprofile=coverage.out ./...
-	@go tool cover -html=coverage.out -o coverage.html
-	@echo "$(COLOR_GREEN)✅ Coverage report: coverage.html$(COLOR_RESET)"
+	go test ./... -coverprofile=coverage.out && go tool cover -html=coverage.out
 
-# ==================== Utilities ====================
-clean:
-	@echo "$(COLOR_YELLOW)🧹 Cleaning build artifacts...$(COLOR_RESET)"
-	@rm -rf bin/
-	@rm -f coverage.out coverage.html
-	@echo "$(COLOR_GREEN)✅ Clean completed$(COLOR_RESET)"
+set-env:
+	@if [ ! -f .env ]; then cp .env.example .env; else echo ".env already exists"; fi
 
-# Clean everything including Docker volumes and containers
-clean-all: stop
-	@echo "$(COLOR_YELLOW)🧹 Deep clean - removing all build artifacts and containers...$(COLOR_RESET)"
-	@rm -rf bin/ dist/ coverage.out coverage.html
-	@echo "$(COLOR_YELLOW)🧹 Removing Docker volumes (database data)...$(COLOR_RESET)"
-	@docker compose down -v 2>/dev/null || true
-	@echo "$(COLOR_GREEN)✅ Complete cleanup done - ready for fresh init$(COLOR_RESET)"
+build-swagger:
+	docker run --rm -v $(PWD)/docs:/local openapitools/openapi-generator-cli generate \
+	-i /local/swagger.yaml \
+	-g openapi \
+	-o /local
 
-# Remove only Docker containers and volumes (keep binaries)
-docker-clean:
-	@echo "$(COLOR_YELLOW)🐳 Cleaning Docker environment...$(COLOR_RESET)"
-	@docker compose down -v 2>/dev/null || true
-	@echo "$(COLOR_GREEN)✅ Docker cleaned$(COLOR_RESET)"
 
-logs:
-	@docker compose logs -f
-
-status:
-	@docker ps -a
-
-# Stop local background app (if any) and docker containers
-stop:
-	@echo "$(COLOR_YELLOW)🛑 Stopping local app (if running) and docker containers...$(COLOR_RESET)"
-	@if [ -f ./wallet.pid ]; then \
-		PID=$$(cat ./wallet.pid); \
-		if kill -0 $$PID 2>/dev/null; then \
-			kill -9 $$PID && echo "Killed process $$PID" || echo "Failed to kill $$PID"; \
-		fi; \
-		rm -f ./wallet.pid; \
-	else \
-		echo "No wallet.pid found"; \
-	fi
-	@echo "$(COLOR_YELLOW)🛑 Killing any process on port 8080 (if stuck)...$(COLOR_RESET)"
-	@lsof -iTCP:8080 -sTCP:LISTEN -t 2>/dev/null | xargs -r kill -9 2>/dev/null || true
-	@sleep 1
-	@echo "$(COLOR_YELLOW)🛑 Stopping docker compose services...$(COLOR_RESET)"
-	@docker compose down
-	@echo "$(COLOR_GREEN)✅ Stopped local app and containers$(COLOR_RESET)"
-
-fmt:
-	@echo "$(COLOR_YELLOW)📐 Formatting code...$(COLOR_RESET)"
-	@go fmt ./...
-	@echo "$(COLOR_GREEN)✅ Code formatted$(COLOR_RESET)"
-
-lint:
-	@echo "$(COLOR_YELLOW)🔍 Running linter...$(COLOR_RESET)"
-	@which golangci-lint > /dev/null || (echo "Installing golangci-lint..." && go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest)
-	@golangci-lint run ./...
-
-# ==================== Shortcuts ====================
-.DEFAULT_GOAL := help
