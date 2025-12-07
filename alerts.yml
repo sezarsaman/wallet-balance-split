@@ -1,0 +1,27 @@
+groups:
+  - name: wbs_app_alerts
+    rules:
+
+      - alert: HighErrorRate
+        expr: rate(http_errors_total[2m]) > 5
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High HTTP error rate"
+
+      - alert: DatabaseErrorsSpike
+        expr: rate(db_errors_total[2m]) > 3
+        for: 30s
+        labels:
+          severity: warning
+        annotations:
+          summary: "Database error rate is increasing"
+
+      - alert: HighRequestLatency
+        expr: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le)) > 0.5
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "95th percentile latency too high"
