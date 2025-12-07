@@ -1,44 +1,28 @@
-# Multi-stage build
+# Stage 1: Build
 FROM golang:1.25-alpine AS builder
 
 WORKDIR /app
 
-# Install dependencies
-RUN apk add --no-cache git ca-certificates tzdata
-
-# Copy go mod files
+# Copy go.mod and go.sum first (for caching)
 COPY go.mod go.sum ./
-
-# Download modules
 RUN go mod download
 
-# Copy source code
+# Copy everything
 COPY . .
 
-# Build the application
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags="-w -s" -o wallet-api ./cmd/main.go
+# Build the binary
+RUN go build -o main ./cmd
 
-# Final stage
+# Stage 2: Run
 FROM alpine:latest
 
-WORKDIR /root/
+WORKDIR /app
 
-# Install runtime dependencies
-RUN apk --no-cache add ca-certificates tzdata
-
-# Copy binary from builder
-COPY --from=builder /app/wallet-api .
-
-# Copy migrations and docs
-COPY --from=builder /app/internal ./internal
-COPY --from=builder /app/docs ./docs
+# Copy the binary from builder
+COPY --from=builder /app/main .
 
 # Expose port
 EXPOSE 8080
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD wget --quiet --tries=1 --spider http://localhost:8080/health || exit 1
-
-# Run application
-CMD ["./wallet-api"]
+# Run the binary
+CMD ["./main"]

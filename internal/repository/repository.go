@@ -70,12 +70,7 @@ func (r *Repository) GetTotalBalance(userID int) (int64, error) {
 
 func (r *Repository) GetWithdrawableBalance(userID int) (int64, error) {
 	var withdrawable int64
-	now := time.Now()
-	err := r.db.QueryRow(`
-		SELECT COALESCE(SUM(amount), 0) FROM transactions
-		WHERE user_id = $1 AND status = 'completed' 
-		AND (release_at <= $2 OR release_at IS NULL OR type = 'withdraw')
-	`, userID, now).Scan(&withdrawable)
+	err := r.db.QueryRow("SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE user_id = $1 AND status = 'completed' AND ((type = 'charge' AND release_at <= $2) OR type = 'withdraw')", userID, time.Now()).Scan(&withdrawable)
 	return withdrawable, err
 }
 
@@ -86,7 +81,7 @@ func (r *Repository) Charge(userID int, amount int64, releaseAt *time.Time, idem
 	}
 
 	var exists int
-	err = tx.QueryRow("SELECT 1 FROM transactions WHERE idempotency_key = $1", idempotencyKey).Scan(&exists)
+	err = tx.QueryRow("SELECT 1 FROM transactions WHERE idempotency_key = $1 FOR UPDATE", idempotencyKey).Scan(&exists)
 	if err == nil {
 		tx.Rollback()
 		return models.ErrDuplicateRequest
@@ -104,7 +99,6 @@ func (r *Repository) Charge(userID int, amount int64, releaseAt *time.Time, idem
 }
 
 func (r *Repository) Withdraw(ctx context.Context, userID int, amount int64, idempotencyKey string) error {
-
 	opts := &sql.TxOptions{
 		Isolation: sql.LevelSerializable,
 		ReadOnly:  false,
@@ -145,9 +139,9 @@ func (r *Repository) Withdraw(ctx context.Context, userID int, amount int64, ide
 	return tx.Commit()
 }
 
-func (r *Repository) UpdateWithdrawalStatus(idempotencyKey string, status string) error {
-	query := `UPDATE transactions SET status = $1 WHERE idempotency_key = $2`
-	result, err := r.db.Exec(query, status, idempotencyKey)
+func (r *Repository) UpdateWithdrawalStatus(idempotencyKey string, status string, userID int) error {
+	query := `UPDATE transactions SET status = $1 WHERE idempotency_key = $2 AND user_id = $3`
+	result, err := r.db.Exec(query, status, idempotencyKey, userID)
 	if err != nil {
 		return err
 	}

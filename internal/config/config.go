@@ -62,7 +62,7 @@ func Load() *Config {
 	cfg.WorkerPool.QueueSize = getEnvInt("WORKER_QUEUE_BUFFER", 100)
 
 	// Server
-	cfg.Server.Host = getEnv("SERVER_HOST", "localhost")
+	cfg.Server.Host = getEnv("SERVER_HOST", "0.0.0.0")
 	cfg.Server.Port = getEnv("SERVER_PORT", "8080")
 	cfg.Server.ReadTimeoutSec = getEnvInt("SERVER_READ_TIMEOUT_SECONDS", 15)
 	cfg.Server.WriteTimeoutSec = getEnvInt("SERVER_WRITE_TIMEOUT_SECONDS", 15)

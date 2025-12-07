@@ -1,29 +1,26 @@
 global:
-  scrape_interval: 15s
-  evaluation_interval: 15s
+  scrape_interval: 10s
+  evaluation_interval: 10s
   external_labels:
+    service: 'wallet-balance-split'
+    env: 'development'
     monitor: 'wallet-simulator'
 
-# Alertmanager configuration
 alerting:
   alertmanagers:
     - static_configs:
         - targets: []
 
 rule_files:
-  # - "first_rules.yml"
-  # - "second_rules.yml"
+  - "alerts.yml"
 
 scrape_configs:
-  - job_name: 'prometheus'
-    static_configs:
-      - targets: ['localhost:9090']
 
-  - job_name: 'wallet-api'
+  - job_name: 'wbs_app'
     metrics_path: '/metrics'
-    scrape_interval: 10s
+    scrape_interval: 5s
     static_configs:
-      - targets: ['localhost:8080']
+      - targets: ['wbs_app:8080']
         labels:
-          service: 'wallet-balance-split'
-          env: 'development'
+          component: 'api'
+
