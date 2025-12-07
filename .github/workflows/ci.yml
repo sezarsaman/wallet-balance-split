@@ -47,7 +47,7 @@ jobs:
 
       - name: Run tests
         env:
-          TEST_DATABASE_URL: postgres://postgres:password@postgres:5432/wbs_db_test?sslmode=disable
+          TEST_DATABASE_URL: postgres://postgres:password@postgres:5432/wbs_db?sslmode=disable
         run: go test ./... -v
 
       - name: Build
