@@ -12,7 +12,7 @@ type Transaction struct {
 	Type      string     `json:"type"`   // "charge" or "withdraw"
 	Status    string     `json:"status"` // "pending", "completed", "failed"
 	CreatedAt time.Time  `json:"created_at"`
-	ReleaseAt *time.Time `json:"release_at,omitempty"` // optional for charge
+	ReleaseAt *time.Time `json:"release_at"` // optional for charge
 }
 
 type Balance struct {
@@ -24,7 +24,7 @@ type ChargeRequest struct {
 	UserID         int        `json:"user_id"`
 	Amount         int64      `json:"amount"`
 	IdempotencyKey string     `json:"idempotency_key"`
-	ReleaseAt      *time.Time `json:"release_at,omitempty"`
+	ReleaseAt      *time.Time `json:"release_at"`
 }
 
 type WithdrawRequest struct {
@@ -75,4 +75,11 @@ var (
 	ErrMissingIdempotencyKey = errors.New("missing idempotency_key")
 	ErrUserNotFound          = errors.New("user not found")
 	ErrAmountMustBePositive  = errors.New("amount must be positive")
+	ErrTransactionNotFound   = errors.New("Transaction Not Found")
+
+	ErrReleaseAtCannotBeEmpty = errors.New("realease at cannot be empty")
+	ErrInvalidReleaseAtFormat = errors.New("release at has invalid format")
+	ErrReleaseAtMustBeFuture  = errors.New("release at must be in future")
+
+	ErrAmountCannotBeZero = errors.New("amount cannot be zero")
 )

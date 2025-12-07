@@ -70,12 +70,7 @@ func (r *Repository) GetTotalBalance(userID int) (int64, error) {
 
 func (r *Repository) GetWithdrawableBalance(userID int) (int64, error) {
 	var withdrawable int64
-	now := time.Now()
-	err := r.db.QueryRow(`
-		SELECT COALESCE(SUM(amount), 0) FROM transactions
-		WHERE user_id = $1 AND status = 'completed' 
-		AND (release_at <= $2 OR release_at IS NULL OR type = 'withdraw')
-	`, userID, now).Scan(&withdrawable)
+	err := r.db.QueryRow("SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE user_id = $1 AND status = 'completed' AND ((type = 'charge' AND release_at <= $2) OR type = 'withdraw')", userID, time.Now()).Scan(&withdrawable)
 	return withdrawable, err
 }
 
@@ -104,7 +99,6 @@ func (r *Repository) Charge(userID int, amount int64, releaseAt *time.Time, idem
 }
 
 func (r *Repository) Withdraw(ctx context.Context, userID int, amount int64, idempotencyKey string) error {
-
 	opts := &sql.TxOptions{
 		Isolation: sql.LevelSerializable,
 		ReadOnly:  false,

@@ -14,9 +14,10 @@ func TestChargeAndBalance(t *testing.T) {
 	repo := utils.SetupTestDB()
 
 	now := time.Now()
-	future := now.Add(24 * time.Hour)
+	past := now.Add(-1 * time.Hour)
+	future := now.Add(1 * time.Hour)
 
-	if err := repo.Charge(1, 1000, nil, "key1"); err != nil {
+	if err := repo.Charge(1, 1000, &past, "key1"); err != nil {
 		t.Fatalf("Charge error: %v", err)
 	}
 	if err := repo.Charge(1, 500, &future, "key2"); err != nil {
