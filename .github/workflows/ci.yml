@@ -18,7 +18,7 @@ jobs:
           POSTGRES_PASSWORD: password
           POSTGRES_DB: wallet
         options: >-
-          --health-cmd "pg_isready -U postgres -d wallet"
+          --health-cmd "pg_isready -U postgres -d wbs_db"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -43,11 +43,11 @@ jobs:
           DB_HOST: localhost
           DB_PORT: 5432
           DB_NAME: wallet
-        run: go run cmd/cli/main.go migrate
+        run: go run cmd/cli/migrate.go Up
 
       - name: Run tests
         env:
-          TEST_DATABASE_URL: postgres://postgres:password@localhost:5432/wallet?sslmode=disable
+          TEST_DATABASE_URL: postgres://postgres:password@localhost:5432/wbs_db?sslmode=disable
         run: go test ./... -v
 
       - name: Build
