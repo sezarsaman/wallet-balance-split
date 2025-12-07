@@ -16,7 +16,7 @@ jobs:
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: password
-          POSTGRES_DB: wallet
+          POSTGRES_DB: wbs_db
         options: >-
           --health-cmd "pg_isready -U postgres -d wbs_db"
           --health-interval 10s
