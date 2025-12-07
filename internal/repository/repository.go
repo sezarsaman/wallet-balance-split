@@ -81,7 +81,7 @@ func (r *Repository) Charge(userID int, amount int64, releaseAt *time.Time, idem
 	}
 
 	var exists int
-	err = tx.QueryRow("SELECT 1 FROM transactions WHERE idempotency_key = $1", idempotencyKey).Scan(&exists)
+	err = tx.QueryRow("SELECT 1 FROM transactions WHERE idempotency_key = $1 FOR UPDATE", idempotencyKey).Scan(&exists)
 	if err == nil {
 		tx.Rollback()
 		return models.ErrDuplicateRequest
@@ -139,9 +139,9 @@ func (r *Repository) Withdraw(ctx context.Context, userID int, amount int64, ide
 	return tx.Commit()
 }
 
-func (r *Repository) UpdateWithdrawalStatus(idempotencyKey string, status string) error {
-	query := `UPDATE transactions SET status = $1 WHERE idempotency_key = $2`
-	result, err := r.db.Exec(query, status, idempotencyKey)
+func (r *Repository) UpdateWithdrawalStatus(idempotencyKey string, status string, userID int) error {
+	query := `UPDATE transactions SET status = $1 WHERE idempotency_key = $2 AND user_id = $3`
+	result, err := r.db.Exec(query, status, idempotencyKey, userID)
 	if err != nil {
 		return err
 	}

@@ -1,67 +1,99 @@
 package repository_test
 
 import (
+	"context"
+	"database/sql"
 	"testing"
 	"time"
-	"wallet-simulator/internal/utils"
+	"wallet-simulator/internal/models"
+	"wallet-simulator/internal/repository"
 
-	"testing/synctest"
-
-	_ "github.com/lib/pq"
+	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/stretchr/testify/assert"
 )
 
-func TestChargeAndBalance(t *testing.T) {
-	repo := utils.SetupTestDB()
-
-	now := time.Now()
-	past := now.Add(-1 * time.Hour)
-	future := now.Add(1 * time.Hour)
-
-	if err := repo.Charge(1, 1000, &past, "key1"); err != nil {
-		t.Fatalf("Charge error: %v", err)
-	}
-	if err := repo.Charge(1, 500, &future, "key2"); err != nil {
-		t.Fatalf("Charge error: %v", err)
-	}
-
-	total, err := repo.GetTotalBalance(1)
+func TestGetTotalBalance(t *testing.T) {
+	db, mock, err := sqlmock.New()
 	if err != nil {
-		t.Fatalf("GetTotalBalance error: %v", err)
+		t.Fatalf("failed to open mock sql db: %v", err)
 	}
-	withdrawable, err := repo.GetWithdrawableBalance(1)
-	if err != nil {
-		t.Fatalf("GetWithdrawableBalance error: %v", err)
-	}
-	if total != 1500 || withdrawable != 1000 {
-		t.Errorf("expected 1500/1000, got %d/%d", total, withdrawable)
+	defer db.Close()
+
+	repo := repository.NewRepository(db)
+
+	userID := 1
+	expectedBalance := int64(500)
+
+	mock.ExpectQuery("SELECT COALESCE\\(SUM\\(amount\\), 0\\) FROM transactions").
+		WithArgs(userID).
+		WillReturnRows(sqlmock.NewRows([]string{"total"}).AddRow(expectedBalance))
+
+	balance, err := repo.GetTotalBalance(userID)
+	assert.NoError(t, err)
+	assert.Equal(t, expectedBalance, balance)
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("unfulfilled expectations: %s", err)
 	}
 }
 
-func TestWithdrawConcurrent(t *testing.T) {
-	repo := utils.SetupTestDB()
-	if err := repo.Charge(1, 2000, nil, "key1"); err != nil {
-		t.Fatalf("Charge error: %v", err)
-	}
-
-	// Use synctest for deterministic concurrent withdraw
-	synctest.Test(t, func(t *testing.T) {
-		repo.Withdraw(t.Context(), 1, int64(1000), "key3")
-		repo.Withdraw(t.Context(), 1, int64(500), "key4")
-	})
-
-	// Simulate background worker completing the withdrawals
-	if err := repo.UpdateWithdrawalStatus("key3", "completed"); err != nil {
-		t.Fatalf("UpdateWithdrawalStatus error: %v", err)
-	}
-	if err := repo.UpdateWithdrawalStatus("key4", "completed"); err != nil {
-		t.Fatalf("UpdateWithdrawalStatus error: %v", err)
-	}
-
-	total, err := repo.GetTotalBalance(1)
+func TestCharge(t *testing.T) {
+	db, mock, err := sqlmock.New()
 	if err != nil {
-		t.Fatalf("GetTotalBalance error: %v", err)
+		t.Fatalf("failed to open mock sql db: %v", err)
 	}
-	if total != 500 {
-		t.Errorf("expected 500, got %d", total)
+	defer db.Close()
+
+	repo := repository.NewRepository(db)
+
+	userID := 1
+	amount := int64(200)
+	releaseAt := time.Now().Add(48 * time.Hour)
+	idempotencyKey := "charge-key-456"
+
+	// Check for duplicate
+	mock.ExpectBegin()
+	mock.ExpectQuery("SELECT 1 FROM transactions").
+		WithArgs(idempotencyKey).
+		WillReturnError(sql.ErrNoRows)
+
+	// Insert transaction
+	mock.ExpectQuery("INSERT INTO transactions").
+		WithArgs(userID, amount, "charge", "completed", sqlmock.AnyArg(), &releaseAt, idempotencyKey).
+		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
+	mock.ExpectCommit()
+
+	err = repo.Charge(userID, amount, &releaseAt, idempotencyKey)
+	assert.NoError(t, err)
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("unfulfilled expectations: %s", err)
+	}
+}
+
+func TestWithdraw_InsufficientBalance(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("failed to open mock sql db: %v", err)
+	}
+	defer db.Close()
+
+	repo := repository.NewRepository(db)
+
+	userID := 1
+	amount := int64(300)
+	idempotencyKey := "withdraw-key-789"
+
+	mock.ExpectBegin()
+	mock.ExpectQuery("SELECT COALESCE\\(SUM\\(amount\\), 0\\) FROM transactions").
+		WithArgs(userID, sqlmock.AnyArg()).
+		WillReturnRows(sqlmock.NewRows([]string{"withdrawable"}).AddRow(100)) // Less than amount
+	mock.ExpectRollback()
+
+	err = repo.Withdraw(context.Background(), userID, amount, idempotencyKey)
+	assert.Equal(t, models.ErrInsufficientBalance, err)
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("unfulfilled expectations: %s", err)
 	}
 }

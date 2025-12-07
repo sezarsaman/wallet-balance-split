@@ -15,7 +15,9 @@ func TestChargeHandler(t *testing.T) {
 	repo := utils.SetupTestDB()
 	r, _ := utils.SetupRouter(repo)
 
-	reqBody, _ := json.Marshal(models.ChargeRequest{UserID: 1, Amount: 1000, IdempotencyKey: "test-1"})
+	tw := time.Now()
+	twf := tw.Add(2 * time.Hour)
+	reqBody, _ := json.Marshal(models.ChargeRequest{UserID: 1, Amount: 1000, IdempotencyKey: "test-1", ReleaseAt: &twf})
 	req := httptest.NewRequest("POST", "/charge", bytes.NewReader(reqBody))
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
