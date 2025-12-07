@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"wallet-simulator/internal/handlers/validation"
 	"wallet-simulator/internal/models"
 	"wallet-simulator/internal/repository"
 	"wallet-simulator/internal/tasks"
@@ -39,12 +40,27 @@ func ChargeHandler(cfg *HandlerConfig) http.HandlerFunc {
 			return
 		}
 
-		if req.IdempotencyKey == "" {
-			http.Error(w, models.ErrMissingIdempotencyKey.Error(), http.StatusBadRequest)
+		validationErrorIdempotencyKey := validation.ValidateIdempotencyKey(req.IdempotencyKey)
+		if validationErrorIdempotencyKey != "" {
+			http.Error(w, validationErrorIdempotencyKey, http.StatusUnprocessableEntity)
 			return
 		}
-		if req.Amount <= 0 {
-			http.Error(w, models.ErrInvalidAmount.Error(), http.StatusBadRequest)
+
+		validationErrorAmount := validation.ValidateAmount(req.Amount)
+		if validationErrorAmount != "" {
+			http.Error(w, validationErrorAmount, http.StatusUnprocessableEntity)
+			return
+		}
+
+		validationErrorReleaseAt := validation.ValidateReleaseAt(req.ReleaseAt)
+		if validationErrorReleaseAt != "" {
+			http.Error(w, validationErrorReleaseAt, http.StatusUnprocessableEntity)
+			return
+		}
+
+		validationErrorUserID := validation.ValidateUserID(req.UserID)
+		if validationErrorUserID != "" {
+			http.Error(w, validationErrorUserID, http.StatusUnprocessableEntity)
 			return
 		}
 
@@ -66,6 +82,13 @@ func ChargeHandler(cfg *HandlerConfig) http.HandlerFunc {
 func GetTransactionsHandler(cfg *HandlerConfig) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, _ := strconv.Atoi(r.URL.Query().Get("user_id"))
+
+		validationErrorUserID := validation.ValidateUserID(userID)
+		if validationErrorUserID != "" {
+			http.Error(w, validationErrorUserID, http.StatusUnprocessableEntity)
+			return
+		}
+
 		page, _ := strconv.Atoi(r.URL.Query().Get("page"))
 		if page < 1 {
 			page = 1
@@ -95,6 +118,12 @@ func GetBalanceHandler(cfg *HandlerConfig) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, _ := strconv.Atoi(r.URL.Query().Get("user_id"))
 
+		validationErrorUserID := validation.ValidateUserID(userID)
+		if validationErrorUserID != "" {
+			http.Error(w, validationErrorUserID, http.StatusUnprocessableEntity)
+			return
+		}
+
 		total, err := cfg.Repo.GetTotalBalance(userID)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -120,13 +149,21 @@ func WithdrawHandler(cfg *HandlerConfig) http.HandlerFunc {
 			return
 		}
 
-		if req.Amount <= 0 {
-			http.Error(w, models.ErrInvalidAmount.Error(), http.StatusBadRequest)
+		validationErrorAmount := validation.ValidateAmount(req.Amount)
+		if validationErrorAmount != "" {
+			http.Error(w, validationErrorAmount, http.StatusUnprocessableEntity)
 			return
 		}
 
-		if req.IdempotencyKey == "" {
-			http.Error(w, models.ErrMissingIdempotencyKey.Error(), http.StatusBadRequest)
+		validationErrorUserID := validation.ValidateUserID(req.UserID)
+		if validationErrorUserID != "" {
+			http.Error(w, validationErrorUserID, http.StatusUnprocessableEntity)
+			return
+		}
+
+		validationErrorIdempotencyKey := validation.ValidateIdempotencyKey(req.IdempotencyKey)
+		if validationErrorIdempotencyKey != "" {
+			http.Error(w, validationErrorIdempotencyKey, http.StatusUnprocessableEntity)
 			return
 		}
 

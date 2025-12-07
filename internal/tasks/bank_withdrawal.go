@@ -42,7 +42,7 @@ func (t *BankWithdrawalTask) withdrawWithRetries(ctx context.Context, maxRetries
 
 		if rand.Float64() > 0.3 {
 			log.Printf("✅ Bank withdrawal successful for user %d (attempt %d)", t.userID, attempt)
-			if err := t.repo.UpdateWithdrawalStatus(t.idempotencyKey, "completed"); err != nil {
+			if err := t.repo.UpdateWithdrawalStatus(t.idempotencyKey, "completed", t.userID); err != nil {
 				log.Printf("⚠️ Failed to update withdrawal status: %v", err)
 				return err
 			}
@@ -63,7 +63,7 @@ func (t *BankWithdrawalTask) withdrawWithRetries(ctx context.Context, maxRetries
 	}
 
 	log.Printf("❌ Bank withdrawal failed after %d retries for user %d", maxRetries, t.userID)
-	if err := t.repo.UpdateWithdrawalStatus(t.idempotencyKey, "failed"); err != nil {
+	if err := t.repo.UpdateWithdrawalStatus(t.idempotencyKey, "failed", t.userID); err != nil {
 		log.Printf("⚠️ Failed to update withdrawal status: %v", err)
 	}
 	return lastErr
