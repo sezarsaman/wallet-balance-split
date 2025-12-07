@@ -43,7 +43,7 @@ jobs:
           DB_HOST: localhost
           DB_PORT: 5432
           DB_NAME: wallet
-        run: go run cmd/cli/migrate.go Up
+        run: go run cmd/cli/main.go Migrate
 
       - name: Run tests
         env:

@@ -1,4 +1,4 @@
-package migrate
+package main
 
 import (
 	"database/sql"
@@ -8,7 +8,7 @@ import (
 	_ "github.com/lib/pq"
 )
 
-func Up() {
+func Migrate() {
 	dsn := os.Getenv("TEST_DB_DSN")
 	if dsn == "" {
 		dsn = "postgres://postgres:password@localhost:5432/wbs_db_test?sslmode=disable"
