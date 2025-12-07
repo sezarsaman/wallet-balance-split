@@ -8,6 +8,10 @@ import (
 	_ "github.com/lib/pq"
 )
 
+func main() {
+	Migrate()
+}
+
 func Migrate() {
 	dsn := os.Getenv("TEST_DB_DSN")
 	if dsn == "" {
