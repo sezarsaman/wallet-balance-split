@@ -74,6 +74,7 @@ wbs/
 ├── docker-compose.yml                      # Services (App, Postgres, Prometheus, Grafana, Swagger)
 ├── migrations/                             # SQL migration files
 ├── Makefile                                # Build & lifecycle management
+├── loadtest.js                             # Load testing script
 └── README.md                               # This file
 ```
 
@@ -92,12 +93,21 @@ wbs/
 - **Worker Pool**: Fixed-size goroutine pool (50 workers) for concurrent withdrawal processing
 - **Idempotency**: `idempotency_key` prevents duplicate processing of same request
 - **Metrics**: Prometheus integration tracks requests, errors, and worker queue stats
+- **Load Testing**: k6 script simulates realistic load on the service in the Local environment
 
 ### Concurrency Model
 
 - **Charge** (Synchronous): Immediate database update, instant response
 - **Withdraw** (Asynchronous): HTTP returns immediately, worker processes in background
 - **Safe**: Uses transactions and idempotency keys for data consistency
+
+### Load Testing
+- **k6 Script** (`loadtest.js`): Simulates 100 concurrent users over 1 hour
+- **Metrics**: Tracks response times, success rates, and throughput
+- **Configuration**: Adjustable VUs, duration, and request mix
+- **Results**: Example results from a load test run:
+![Screenshot](./K6_results.png)
+
 
 ## 📖 API Documentation
 
