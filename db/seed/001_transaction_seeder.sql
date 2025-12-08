@@ -1,6 +1,6 @@
 -- Seeder for transactions table
 
--- User 1
+-- Transactions For User 1
 INSERT INTO transactions (user_id, amount, type, status, idempotency_key, created_at, updated_at, release_at)
 VALUES 
 (1, 100000, 'charge', 'completed', 'seed_charge_1_001', NOW(), NOW(), NOW() + INTERVAL '3 hours'),
@@ -9,7 +9,7 @@ VALUES
 (1, 10000, 'withdraw', 'pending', 'seed_withdraw_1_002', NOW(), NOW(), NOW() + INTERVAL '2 hours')
 ON CONFLICT (idempotency_key) DO NOTHING;
 
--- User 2
+-- Transactions For User 2
 INSERT INTO transactions (user_id, amount, type, status, idempotency_key, created_at, updated_at, release_at)
 VALUES
 (2, 200000, 'charge', 'completed', 'seed_charge_2_001', NOW(), NOW(), NOW() + INTERVAL '3 hours'),
@@ -18,7 +18,7 @@ VALUES
 (2, 25000, 'withdraw', 'failed', 'seed_withdraw_2_002', NOW(), NOW(), NULL)
 ON CONFLICT (idempotency_key) DO NOTHING;
 
--- User 3
+-- Transactions For User 3
 INSERT INTO transactions (user_id, amount, type, status, idempotency_key, created_at, updated_at, release_at)
 VALUES
 (3, 150000, 'charge', 'completed', 'seed_charge_3_001', NOW(), NOW(), NOW() + INTERVAL '3 hours'),
