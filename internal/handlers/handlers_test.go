@@ -29,7 +29,7 @@ func TestChargeHandler(t *testing.T) {
 
 func TestWithdrawHandler(t *testing.T) {
 	repo := utils.SetupTestDB()
-	r, pool := utils.SetupRouter(repo)
+	r, _ := utils.SetupRouter(repo)
 
 	tw := time.Now()
 	repo.Charge(1, 100000, &tw, "testxyz")
@@ -38,8 +38,6 @@ func TestWithdrawHandler(t *testing.T) {
 	req := httptest.NewRequest("POST", "/withdraw", bytes.NewReader(reqBody))
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
-
-	pool.Wait(1)
 
 	if w.Code != http.StatusOK {
 		t.Errorf("expected 200, got %d; resp: %s", w.Code, w.Body.String())
